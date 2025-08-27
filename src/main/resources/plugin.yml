@@ -1,0 +1,4 @@
+name: asd
+version: '1.0-SNAPSHOT'
+main: org.testmode.asd.Asd
+api-version: '1.21'
