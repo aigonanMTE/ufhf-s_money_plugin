@@ -2,3 +2,12 @@ name: asd
 version: '1.0-SNAPSHOT'
 main: org.testmode.asd.Asd
 api-version: '1.21'
+
+commands:
+#  테스트:
+#    description: "테스트"
+#    permission: 'op'
+#    usage: "사용법: 테스트 인데 뭘 사용법을 물어보노"
+  돈:
+    description: "돈"
+    usage: "/돈 <보내기> <플레이어 이름> <금액>"

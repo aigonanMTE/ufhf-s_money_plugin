@@ -1,6 +1,7 @@
 package org.testmode.asd.commands.money
 
 import org.bukkit.Bukkit
+import org.bukkit.ChatColor
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -21,7 +22,15 @@ class MainMoneyCommand : CommandExecutor, TabCompleter {
         }
 
         if (args.isEmpty()) {
-            sender.sendMessage("ㅗ")
+            sender.sendMessage(
+                """
+                ${ChatColor.YELLOW}===========돈===========
+                이름 : ${sender.name}
+                잔액 : {나중에 돈 알아서}
+                송금 : /돈 <보내기> <플레이어 이름> <금액>
+                ===========돈===========
+                """.trimIndent()
+            )
             return true
         }
 
@@ -31,11 +40,23 @@ class MainMoneyCommand : CommandExecutor, TabCompleter {
                     sender.sendMessage("/돈 보내기 <플레이어> <금액>")
                 } else {
                     val targetName = args[1]
+                    if (targetName == sender.name) {
+                        sender.sendMessage("자기 자신에게는 입금이 불가 합니다.")
+                        return true
+                    }
+
+                    val target = Bukkit.getPlayerExact(targetName)
+                    if (target == null || !target.isOnline) {
+                        sender.sendMessage("해당 플레이어가 접속 중이 아닙니다!")
+                        return true
+                    }
+
                     val amount = args[2].toIntOrNull()
-                    if (amount == null) {
-                        sender.sendMessage("금액을 숫자로 입력해주세요!")
+                    if (amount == null || amount <= 0) {
+                        sender.sendMessage("금액을 올바른 숫자로 입력해주세요!")
                     } else {
-                        sender.sendMessage("${targetName}에게 ${amount}원을 보냅니다!")
+                        sender.sendMessage("${target.name}에게 ${amount}원을 보냅니다!")
+                        target.sendMessage("${sender.name}님이 당신에게 ${amount}원을 보냈습니다!")
                         // 실제 송금 로직 구현
                     }
                 }
@@ -56,15 +77,15 @@ class MainMoneyCommand : CommandExecutor, TabCompleter {
 
         when (args.size) {
             1 -> {
-                // 첫 번째 인자 자동완성 (명령어 종류)
                 val options = listOf("보내기")
                 completions.addAll(options.filter { it.startsWith(args[0], ignoreCase = true) })
             }
             2 -> {
-                // 두 번째 인자 자동완성 (온라인 플레이어 이름)
-                completions.addAll(Bukkit.getOnlinePlayers()
-                    .map { it.name }
-                    .filter { it.startsWith(args[1], ignoreCase = true) })
+                completions.addAll(
+                    Bukkit.getOnlinePlayers()
+                        .map { it.name }
+                        .filter { it.startsWith(args[1], ignoreCase = true) }
+                )
             }
         }
 
