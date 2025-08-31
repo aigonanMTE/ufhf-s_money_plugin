@@ -9,6 +9,7 @@ import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import org.testmode.asd.SQL.getmoney
+import org.testmode.asd.SQL.sendMoney
 
 class MainMoneyCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, TabCompleter {
 
@@ -22,13 +23,14 @@ class MainMoneyCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Ta
             sender.sendMessage("님 플레이어 아님 꺼지셈")
             return true
         }
+        val money = getmoney(javaPlugin , sender.uniqueId.toString())
 
         if (args.isEmpty()) {
             sender.sendMessage(
                 """
                 ${ChatColor.YELLOW}===========돈===========
                 이름 : ${sender.name}
-                잔액 : ${getmoney(javaPlugin , sender.uniqueId.toString())}
+                잔액 : $money
                 송금 : /돈 <보내기> <플레이어 이름> <금액>
                 =======================
                 """.trimIndent()
@@ -54,12 +56,19 @@ class MainMoneyCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Ta
                     }
 
                     val amount = args[2].toIntOrNull()
-                    if (amount == null || amount <= 0) {
+                    if (amount == null || amount <= 100 || amount > money!!) {
                         sender.sendMessage("금액을 올바른 숫자로 입력해주세요!")
-                    } else {
+                        return true
+                    } else if(amount >= 10000000){
+                        sender.sendMessage("10000000원 이상으론 송금 할수 없습니다.")
+                        return true
+                    }else {
+                        if (!sendMoney(javaPlugin, sender.uniqueId.toString() , target.uniqueId.toString() , amount)){
+                            sender.sendMessage("${ChatColor.RED}송금중 오류 발생! \n 보내기 전 돈 값${money}")
+                            return true
+                        }
                         sender.sendMessage("${target.name}에게 ${amount}원을 보냅니다!")
                         target.sendMessage("${sender.name}님이 당신에게 ${amount}원을 보냈습니다!")
-                        // 실제 송금 로직 구현
                     }
                 }
                 return true

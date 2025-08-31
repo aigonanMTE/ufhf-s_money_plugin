@@ -1,7 +1,9 @@
 package org.testmode.asd.SQL
 
+import jdk.jfr.DataAmount
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
+import org.testmode.asd.commands.testing
 import java.io.File
 import java.sql.DriverManager
 
@@ -75,6 +77,39 @@ fun getmoney(javaPlugin: JavaPlugin, userUuid: String): Int? {
         javaPlugin.logger.warning("[getmoney]플레이어 ${userUuid}(${player?.name})님의 돈 값 불러오기중 오류 발생 \n$e")
         return null // 오류 발생
     }
+}
 
+fun sendMoney(javaPlugin: JavaPlugin, sender_Uuid:String, target_Uuid:String, amount: Int):Boolean{
+    if (!userExists(javaPlugin,sender_Uuid) || !userExists(javaPlugin, target_Uuid)){
+        javaPlugin.logger.warning("[sendMoney] 데이터 베이스에 없는 유저의 정보 검색 시도")
+        return false
+    }
+    try {
+        val senderMoney = getmoney(javaPlugin, sender_Uuid)
+        val targetMoney = getmoney(javaPlugin, target_Uuid)
+        if (amount <= 100 || amount >= 10000000 || senderMoney!! <= amount) {
+            javaPlugin.logger.warning("[sendMoney] ${sender_Uuid}님이 ${target_Uuid}님에게 허용치를 넘는 송금 시도를 차단 하였습니다.")
+            return false
+        }
+        val pluginFolder = javaPlugin.dataFolder
+        val dbPath = File(pluginFolder, "db${File.separator}money.db")
+        val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
+        connection.use { conn ->
+            val sql = "update user_money SET money=? where user_uuid=?;"
+            val pstmt = conn.prepareStatement(sql)
+            pstmt.use {
+                it.setInt(1, senderMoney - amount)
+                it.setString(2, sender_Uuid)
+                it.executeUpdate()
+                it.setInt(1, targetMoney!! + amount)
+                it.setString(2, target_Uuid)
+                it.executeUpdate()
+            }
+        }
+    }catch (e:Exception){
+        javaPlugin.logger.warning("[sendMoney] ${sender_Uuid}님이 ${target_Uuid}님에게 송금 도중 오류 발생 \n$e")
+        return false
+    }
+    return true
 }
 
