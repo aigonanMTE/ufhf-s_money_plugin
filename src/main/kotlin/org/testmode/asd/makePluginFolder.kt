@@ -32,7 +32,7 @@ fun makePluginFolder(javaPlugin: JavaPlugin): Boolean {
                 it.executeUpdate(
                     """
                     CREATE TABLE IF NOT EXISTS user_money (
-                        user_uuid NUMERIC UNIQUE NOT NULL,
+                        user_uuid TEXT UNIQUE NOT NULL,
                         money INTEGER NOT NULL DEFAULT 0
                     );
                     CREATE TABLE IF NOT EXISTS money_log (

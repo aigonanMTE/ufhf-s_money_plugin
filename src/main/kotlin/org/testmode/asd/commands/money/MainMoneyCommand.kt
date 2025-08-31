@@ -7,8 +7,10 @@ import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
+import org.bukkit.plugin.java.JavaPlugin
+import org.testmode.asd.SQL.getmoney
 
-class MainMoneyCommand : CommandExecutor, TabCompleter {
+class MainMoneyCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, TabCompleter {
 
     override fun onCommand(
         sender: CommandSender,
@@ -26,9 +28,9 @@ class MainMoneyCommand : CommandExecutor, TabCompleter {
                 """
                 ${ChatColor.YELLOW}===========돈===========
                 이름 : ${sender.name}
-                잔액 : {나중에 돈 알아서}
+                잔액 : ${getmoney(javaPlugin , sender.uniqueId.toString())}
                 송금 : /돈 <보내기> <플레이어 이름> <금액>
-                ===========돈===========
+                =======================
                 """.trimIndent()
             )
             return true
