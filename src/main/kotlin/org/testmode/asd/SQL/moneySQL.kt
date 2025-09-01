@@ -7,6 +7,9 @@ import org.testmode.asd.commands.testing
 import java.io.File
 import java.sql.DriverManager
 
+// TODO:돈 로그 남기는 함수 만드셈
+// TODO:돈 쓰는 상점 만드셈 (gui로)
+
 fun userExists(javaPlugin: JavaPlugin, userUuid: String): Boolean {
     val pluginFolder = javaPlugin.dataFolder
     val dbPath = File(pluginFolder, "db${File.separator}money.db")

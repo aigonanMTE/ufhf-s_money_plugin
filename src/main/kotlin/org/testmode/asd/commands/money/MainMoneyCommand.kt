@@ -55,13 +55,16 @@ class MainMoneyCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Ta
                         return true
                     }
 
+                    val targetMoney:Int = getmoney(javaPlugin, target.uniqueId.toString())!!
                     val amount = args[2].toIntOrNull()
                     if (amount == null || amount <= 100 || amount > money!!) {
-                        sender.sendMessage("금액을 올바른 숫자로 입력해주세요!")
+                        sender.sendMessage("100원 이하로는 송금이 불가합니다")
                         return true
                     } else if(amount >= 10000000){
                         sender.sendMessage("10000000원 이상으론 송금 할수 없습니다.")
                         return true
+                    }else if(targetMoney >= Int.MAX_VALUE - 15000000){
+                        sender.sendMessage("입금 타겟의 돈이 최대 한도에 도달하였습니다.")
                     }else {
                         if (!sendMoney(javaPlugin, sender.uniqueId.toString() , target.uniqueId.toString() , amount)){
                             sender.sendMessage("${ChatColor.RED}송금중 오류 발생! \n 보내기 전 돈 값${money}")
