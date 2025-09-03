@@ -35,14 +35,18 @@ fun makePluginFolder(javaPlugin: JavaPlugin): Boolean {
                         user_uuid TEXT UNIQUE NOT NULL,
                         money INTEGER NOT NULL DEFAULT 0
                     );
-                    CREATE TABLE IF NOT EXISTS money_log (
-                        number      NUMERIC PRIMARY KEY NOT NULL,
+                    CREATE TABLE money_log (
+                        number      NUMERIC PRIMARY KEY
+                                            NOT NULL,
                         system      BLOB    NOT NULL,
-                        target_uuid NUMERIC NOT NULL,
+                        target_uuid TEXT    NOT NULL,
                         target_name TEXT    NOT NULL,
-                        sender_uuid NUMERIC ,
-                        sender_name TEXT ,
-                        why         TEXT    NOT NULL
+                        sender_uuid TEXT    DEFAULT system,
+                        sender_name TEXT    NOT NULL
+                                            DEFAULT system,
+                        type        TEXT    NOT NULL,
+                        date        TEXT    NOT NULL,
+                        value       NUMERIC NOT NULL
                     );
                     """.trimIndent()
                 )
