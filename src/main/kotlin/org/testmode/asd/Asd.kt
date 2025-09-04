@@ -12,6 +12,7 @@ import org.bukkit.scoreboard.Scoreboard
 import org.testmode.asd.commands.money.MainMoneyCommand
 import org.testmode.asd.SQL.addUser
 import org.testmode.asd.SQL.getmoney
+import org.testmode.asd.commands.money.sys_money_commnad
 
 
 class Asd : JavaPlugin(), Listener {
@@ -29,6 +30,7 @@ class Asd : JavaPlugin(), Listener {
 
         // 커맨드 등록
         getCommand("돈")?.setExecutor(MainMoneyCommand(this))
+        getCommand("sys_money").setExecutor(sys_money_commnad(this))
         // 이벤트 리스너 등록
         server.pluginManager.registerEvents(PlayerJoinListener(this), this)
         logger.info("Wtf 플러그인 활성화됨!")

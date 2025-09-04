@@ -1,13 +1,10 @@
 package org.testmode.asd.SQL
 
-import jdk.jfr.DataAmount
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
-import org.testmode.asd.commands.testing
 import java.io.File
 import java.sql.DriverManager
 
-// TODO:돈 로그 남기는 함수 만드셈
 // TODO:돈 쓰는 상점 만드셈 (gui로)
 
 fun userExists(javaPlugin: JavaPlugin, userUuid: String): Boolean {
@@ -111,6 +108,41 @@ fun sendMoney(javaPlugin: JavaPlugin, sender_Uuid:String, target_Uuid:String, am
         }
     }catch (e:Exception){
         javaPlugin.logger.warning("[sendMoney] ${sender_Uuid}님이 ${target_Uuid}님에게 송금 도중 오류 발생 \n$e")
+        return false
+    }
+    return true
+}
+
+fun sysSendMoney(javaPlugin: JavaPlugin, target_uuid : String, value:Int):Boolean{
+    if (!userExists(javaPlugin, target_uuid)){
+        javaPlugin.logger.warning("[sys_send_money] 데이터 베이스에 없는 유저의 정보 검색 시도")
+        return false
+    }
+    try {
+        val targetMoney: Int? = getmoney(javaPlugin, target_uuid)
+        if (value <= 0 || value >= 10000000) {
+            javaPlugin.logger.warning("[sys_send_money] ${target_uuid}이상한 금액 지급 시도 차단")
+            return false
+        }else if (targetMoney!! >= Int.MAX_VALUE - 15000000){
+            javaPlugin.logger.warning("[sys_send_money] ${target_uuid}돈 최대 보유 한도 초과 송금 불가")
+            return false
+        }
+
+        val pluginFolder = javaPlugin.dataFolder
+        val dbPath = File(pluginFolder, "db${File.separator}money.db")
+        val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
+        connection.use { conn ->
+            val sql = "update user_money SET money=? where user_uuid=?;"
+            val pstmt = conn.prepareStatement(sql)
+            pstmt.use {
+                it.setInt(1, targetMoney + value)
+                it.setString(2, target_uuid.toString())
+                it.executeUpdate()
+            }
+        }
+        Log_sys_addMoney(javaPlugin , target_uuid, value)
+    }catch (e:Exception){
+        javaPlugin.logger.warning("[sys_send_money] ${target_uuid}에게 시스템 돈 지급중 오류 발생 \n $e")
         return false
     }
     return true

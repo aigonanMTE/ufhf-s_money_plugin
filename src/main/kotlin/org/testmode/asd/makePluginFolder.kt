@@ -28,29 +28,31 @@ fun makePluginFolder(javaPlugin: JavaPlugin): Boolean {
         val connection = DriverManager.getConnection("jdbc:sqlite:${moneyDbFile.absolutePath}")
         connection.use { conn ->
             val stmt = conn.createStatement()
-            stmt.use {
-                it.executeUpdate(
-                    """
-                    CREATE TABLE IF NOT EXISTS user_money (
-                        user_uuid TEXT UNIQUE NOT NULL,
-                        money INTEGER NOT NULL DEFAULT 0
-                    );
-                    CREATE TABLE money_log (
-                        number      NUMERIC PRIMARY KEY
-                                            NOT NULL,
-                        system      BLOB    NOT NULL,
-                        target_uuid TEXT    NOT NULL,
-                        target_name TEXT    NOT NULL,
-                        sender_uuid TEXT    DEFAULT system,
-                        sender_name TEXT    NOT NULL
-                                            DEFAULT system,
-                        type        TEXT    NOT NULL,
-                        date        TEXT    NOT NULL,
-                        value       NUMERIC NOT NULL
-                    );
-                    """.trimIndent()
-                )
-            }
+            stmt.executeUpdate(
+                """
+                CREATE TABLE IF NOT EXISTS user_money (
+                    user_uuid TEXT UNIQUE NOT NULL,
+                    money     INTEGER NOT NULL DEFAULT 0
+                );
+                """.trimIndent()
+                        )
+
+            stmt.executeUpdate(
+                """
+                CREATE TABLE IF NOT EXISTS money_log (
+                    number       INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    system       TEXT    NOT NULL,
+                    target_uuid  TEXT    NOT NULL,
+                    target_name  TEXT    NOT NULL,
+                    sender_uuid  TEXT    DEFAULT 'system',
+                    sender_name  TEXT    DEFAULT 'system',
+                    type         TEXT    NOT NULL,
+                    date         TEXT    NOT NULL,
+                    value        INTEGER NOT NULL
+                );
+                """.trimIndent()
+            )
+
             javaPlugin.logger.info("user_money 테이블 확인/생성 완료")
         }
 

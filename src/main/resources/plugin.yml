@@ -11,3 +11,7 @@ commands:
   돈:
     description: "돈"
     usage: "/돈 <보내기> <플레이어 이름> <금액>"
+  sys_money:
+    description: "시스템에서 플레이어에게 돈을 지급합니다"
+    usage: "/sys_money <int_value>"
+    permission: 'op'
