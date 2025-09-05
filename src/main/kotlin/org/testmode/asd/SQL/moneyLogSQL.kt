@@ -8,7 +8,43 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-// TODO:돈 로그 남기는 함수 만드셈
+// TODO:입금 , 사용자 추가 등등 로그 만드셈
+
+fun Log_sys_adduser(javaPlugin: JavaPlugin, target_uuid: String):Boolean{
+    val uuid = UUID.fromString(target_uuid)
+    val target = Bukkit.getPlayer(uuid) // UUID 기반으로 검색
+    val targetName = target?.name ?: "unknown" // 오프라인이면 null → "unknown"
+
+    val now = LocalDateTime.now()
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val formatted = now.format(formatter)
+
+    try {
+        val pluginFolder = javaPlugin.dataFolder
+        val dbPath = File(pluginFolder, "db${File.separator}money.db")
+        val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
+        connection.use { conn ->
+            val sql = """
+                INSERT INTO money_log 
+                (system, target_uuid, target_name, type, date, value) 
+                VALUES ('system', ?, ?, 'add_user', ?, ?)
+            """.trimIndent()
+
+            val pstmt = conn.prepareStatement(sql)
+            pstmt.use {
+                it.setString(1, target_uuid)
+                it.setString(2, targetName)
+                it.setString(3, formatted)
+                it.setInt(4, 0)
+                it.executeUpdate()
+            }
+        }
+    } catch (e: Exception) {
+        javaPlugin.logger.warning("[Log_sys_adduser] 오류 발생: $e")
+        return false
+    }
+    return true
+}
 
 fun Log_sys_addMoney(javaPlugin: JavaPlugin, target_uuid: String, value: Int): Boolean {
     val uuid = UUID.fromString(target_uuid)
@@ -31,7 +67,7 @@ fun Log_sys_addMoney(javaPlugin: JavaPlugin, target_uuid: String, value: Int): B
             val sql = """
                 INSERT INTO money_log 
                 (system, target_uuid, target_name, type, date, value) 
-                VALUES ('system', ?, ?, 'add', ?, ?)
+                VALUES ('system', ?, ?, 'money_add', ?, ?)
             """.trimIndent()
 
             val pstmt = conn.prepareStatement(sql)

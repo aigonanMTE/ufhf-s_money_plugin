@@ -21,16 +21,21 @@ class Asd : JavaPlugin(), Listener {
         // 이벤트 리스너 등록
         server.pluginManager.registerEvents(this, this)
         if (!makePluginFolder(this)){
-            logger.warning("""===================================================================
-                \n폴더 생성중 오류 발생!
-                \n===================================================================
+            logger.warning("""
+                ===================================================================
+                                     !!!폴더 생성중 오류 발생!!!
+                                       
+                             오류로 인하여 사용자의 데이터를 가저올수 없습니다.
+                          이 오류는 대부분 플러그인 폴더가 손상 되었을떄 발생합니다.
+                                 플러그인 폴더의 asd폴더를 삭재해주세요.
+                ===================================================================
             """.trimMargin())
             error("폴더 생성중 오류 발생!")
         }
 
         // 커맨드 등록
         getCommand("돈")?.setExecutor(MainMoneyCommand(this))
-        getCommand("sys_money").setExecutor(sys_money_commnad(this))
+        getCommand("sys_money")?.setExecutor(sys_money_commnad(this))
         // 이벤트 리스너 등록
         server.pluginManager.registerEvents(PlayerJoinListener(this), this)
         logger.info("Wtf 플러그인 활성화됨!")

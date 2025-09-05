@@ -40,6 +40,7 @@ fun addUser(javaPlugin: JavaPlugin, userUUid: String): String {
                 it.executeUpdate()
             }
         }
+        Log_sys_adduser(javaPlugin , userUUid)
     } catch (e: Exception) {
         javaPlugin.logger.warning("[addUser]플레이어 ${userUUid}(${player?.name})님의 정보를 추가중 오류 발생 \n$e")
         return "error" // 오류 발생
