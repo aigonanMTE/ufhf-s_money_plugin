@@ -107,6 +107,7 @@ fun sendMoney(javaPlugin: JavaPlugin, sender_Uuid:String, target_Uuid:String, am
                 it.executeUpdate()
             }
         }
+        Log_user_send(javaPlugin, target_Uuid, sender_Uuid , amount)
     }catch (e:Exception){
         javaPlugin.logger.warning("[sendMoney] ${sender_Uuid}님이 ${target_Uuid}님에게 송금 도중 오류 발생 \n$e")
         return false

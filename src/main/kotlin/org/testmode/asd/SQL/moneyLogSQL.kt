@@ -8,17 +8,60 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-// TODO:입금 , 사용자 추가 등등 로그 만드셈
+val now: LocalDateTime = LocalDateTime.now()
+val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+val formatted: String = now.format(formatter)
+
+fun Log_user_send(
+    javaPlugin: JavaPlugin,
+    target_uuid: String,
+    sender_uuid: String,
+    value: Int
+): Boolean {
+    val targetTUUid = UUID.fromString(target_uuid)
+    val target = Bukkit.getPlayer(targetTUUid)
+
+    val senderTUUid = UUID.fromString(sender_uuid)
+    val sender = Bukkit.getPlayer(senderTUUid)
+
+    // 날짜 포맷팅
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val formatted = LocalDateTime.now().format(formatter)
+
+    try {
+        val pluginFolder = javaPlugin.dataFolder
+        val dbPath = File(pluginFolder, "db${File.separator}money.db")
+        val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
+
+        connection.use { conn ->
+            val sql = """
+                INSERT INTO money_log 
+                (system, target_uuid, target_name, type, sender_uuid, sender_name, date, value) 
+                VALUES ('user', ?, ?, 'deposit', ?, ?, ?, ?)
+            """.trimIndent()
+
+            conn.prepareStatement(sql).use { pstmt ->
+                pstmt.setString(1, target_uuid)
+                pstmt.setString(2, target?.name ?: "Unknown")
+                pstmt.setString(3, sender_uuid)
+                pstmt.setString(4, sender?.name ?: "Unknown")
+                pstmt.setString(5, formatted)
+                pstmt.setInt(6, value)
+                pstmt.executeUpdate()
+            }
+        }
+    } catch (e: Exception) {
+        javaPlugin.logger.warning("[Log_user_send] 유저 송금 로그 기록 중 오류 발생 \n $e")
+        return false
+    }
+    return true
+}
+
 
 fun Log_sys_adduser(javaPlugin: JavaPlugin, target_uuid: String):Boolean{
     val uuid = UUID.fromString(target_uuid)
     val target = Bukkit.getPlayer(uuid) // UUID 기반으로 검색
     val targetName = target?.name ?: "unknown" // 오프라인이면 null → "unknown"
-
-    val now = LocalDateTime.now()
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val formatted = now.format(formatter)
-
     try {
         val pluginFolder = javaPlugin.dataFolder
         val dbPath = File(pluginFolder, "db${File.separator}money.db")
@@ -54,11 +97,6 @@ fun Log_sys_addMoney(javaPlugin: JavaPlugin, target_uuid: String, value: Int): B
     if (value <= 0) {
         return false
     }
-
-    val now = LocalDateTime.now()
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val formatted = now.format(formatter)
-
     try {
         val pluginFolder = javaPlugin.dataFolder
         val dbPath = File(pluginFolder, "db${File.separator}money.db")
