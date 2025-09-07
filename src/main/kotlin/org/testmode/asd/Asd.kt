@@ -14,6 +14,8 @@ import org.testmode.asd.commands.money.MainMoneyCommand
 import org.testmode.asd.SQL.addUser
 import org.testmode.asd.SQL.getmoney
 import org.testmode.asd.commands.money.sys_money_commnad
+import net.kyori.adventure.text.minimessage.MiniMessage
+import org.testmode.asd.commands.testing
 
 class Asd : JavaPlugin(), Listener {
 
@@ -35,6 +37,7 @@ class Asd : JavaPlugin(), Listener {
         }
 
         // 커맨드 등록
+        getCommand("테스트")?.setExecutor(testing(this))
         getCommand("돈")?.setExecutor(MainMoneyCommand(this))
         getCommand("sys_money")?.setExecutor(sys_money_commnad(this))
         server.pluginManager.registerEvents(PlayerJoinListener(this), this)

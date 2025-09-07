@@ -42,37 +42,37 @@ class MainMoneyCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Ta
         when (args[0].lowercase()) {
             "보내기" -> {
                 if (args.size < 3) {
-                    sender.sendMessage("/돈 보내기 <플레이어> <금액>")
+                    sender.sendMessage("${ChatColor.YELLOW}/돈 보내기 <플레이어> <금액>")
                 } else {
                     val targetName = args[1]
                     if (targetName == sender.name) {
-                        sender.sendMessage("자기 자신에게는 입금이 불가 합니다.")
+                        sender.sendMessage("${ChatColor.YELLOW}자기 자신에게는 입금이 불가 합니다.")
                         return true
                     }
 
                     val target = Bukkit.getPlayerExact(targetName)
                     if (target == null || !target.isOnline) {
-                        sender.sendMessage("해당 플레이어가 접속 중이 아닙니다!")
+                        sender.sendMessage("${ChatColor.YELLOW}해당 플레이어가 접속 중이 아닙니다!")
                         return true
                     }
 
                     val targetMoney: Int = getmoney(javaPlugin, target.uniqueId.toString())!!
                     val amount = args[2].toIntOrNull()
                     if (amount == null || amount <= 100 || amount > money!!) {
-                        sender.sendMessage("100원 이하로는 송금이 불가합니다")
+                        sender.sendMessage("${ChatColor.DARK_RED}100원 이하로는 송금이 불가합니다")
                         return true
                     } else if (amount >= 10000000) {
-                        sender.sendMessage("10000000원 이상으론 송금 할수 없습니다.")
+                        sender.sendMessage("${ChatColor.DARK_RED}10000000원 이상으론 송금 할수 없습니다.")
                         return true
                     } else if (targetMoney >= Int.MAX_VALUE - 15000000) {
-                        sender.sendMessage("입금 타겟의 돈이 최대 한도에 도달하였습니다.")
+                        sender.sendMessage("${ChatColor.DARK_RED}입금 타겟의 돈이 최대 한도에 도달하였습니다.")
                     } else {
                         if (!sendMoney(javaPlugin, sender.uniqueId.toString(), target.uniqueId.toString(), amount)) {
                             sender.sendMessage("${ChatColor.RED}송금중 오류 발생! \n 보내기 전 돈 값${money}")
                             return true
                         }
-                        sender.sendMessage("${target.name}에게 ${amount}원을 보냅니다!")
-                        target.sendMessage("${sender.name}님이 당신에게 ${amount}원을 보냈습니다!")
+                        sender.sendMessage("${ChatColor.YELLOW}${target.name}에게 ${amount}원을 보냅니다!")
+                        target.sendMessage("${ChatColor.YELLOW}${sender.name}님이 당신에게 ${amount}원을 보냈습니다!")
                     }
                 }
                 return true

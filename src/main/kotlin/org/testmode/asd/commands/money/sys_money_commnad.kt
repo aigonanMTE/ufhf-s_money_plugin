@@ -7,22 +7,36 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import org.testmode.asd.SQL.sysSendMoney
 
-class sys_money_commnad(private val javaPlugin: JavaPlugin):CommandExecutor {
-    override fun onCommand(p0: CommandSender, p1: Command, p2: String, p3: Array<out String>): Boolean {
-        if (p0 !is Player){
-            javaPlugin.logger.info("님 플레이어 아님")
+class sys_money_commnad(private val javaPlugin: JavaPlugin) : CommandExecutor {
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if (sender !is Player) {
+            javaPlugin.logger.info("콘솔에서 실행 불가")
             return false
-        }else if (p0.name != "ufhf"){
-            p0.sendMessage("너이 게이씨 나가 임마!${p0.name}")
+        }
+
+        if (sender.name != "ufhf") {
+            sender.sendMessage("너는 관리자 권한이 없습니다. (${sender.name})")
             return true
         }
-        val moneyFun = sysSendMoney(javaPlugin,p0.uniqueId.toString(),p3[0].toInt())
-        if(!moneyFun) {
-            p0.sendMessage("오류 시발")
+
+        if (args.isEmpty()) {
+            sender.sendMessage("/sys_money <금액>")
             return true
-        }else{
-            p0.sendMessage("${p0.name}에게 ${p3[0]} 만큼 지급 완료")
         }
+
+        val amount = args[0].toIntOrNull()
+        if (amount == null) {
+            sender.sendMessage("올바른 숫자를 입력하세요: ${args[0]}")
+            return true
+        }
+
+        val success = sysSendMoney(javaPlugin, sender.uniqueId.toString(), amount)
+        if (!success) {
+            sender.sendMessage("지급 중 오류 발생")
+        } else {
+            sender.sendMessage("${sender.name}에게 ${amount} 지급 완료")
+        }
+
         return true
     }
 }

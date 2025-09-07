@@ -123,7 +123,7 @@ fun sysSendMoney(javaPlugin: JavaPlugin, target_uuid : String, value:Int):Boolea
     try {
         val targetMoney: Int? = getmoney(javaPlugin, target_uuid)
         if (value <= 0 || value >= 10000000) {
-            javaPlugin.logger.warning("[sys_send_money] ${target_uuid}이상한 금액 지급 시도 차단")
+            javaPlugin.logger.warning("[sys_send_money] ${target_uuid} 10000000이상 0이하의 돈 지급 차단")
             return false
         }else if (targetMoney!! >= Int.MAX_VALUE - 15000000){
             javaPlugin.logger.warning("[sys_send_money] ${target_uuid}돈 최대 보유 한도 초과 송금 불가")
