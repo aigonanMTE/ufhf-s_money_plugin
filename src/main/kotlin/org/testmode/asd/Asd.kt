@@ -15,7 +15,9 @@ import org.testmode.asd.SQL.addUser
 import org.testmode.asd.SQL.getmoney
 import org.testmode.asd.commands.money.sys_money_commnad
 import net.kyori.adventure.text.minimessage.MiniMessage
+import org.testmode.asd.commands.shop.MainShopCommand
 import org.testmode.asd.commands.testing
+import org.testmode.asd.listeners.ShopListener
 
 class Asd : JavaPlugin(), Listener {
 
@@ -40,7 +42,11 @@ class Asd : JavaPlugin(), Listener {
         getCommand("테스트")?.setExecutor(testing(this))
         getCommand("돈")?.setExecutor(MainMoneyCommand(this))
         getCommand("sys_money")?.setExecutor(sys_money_commnad(this))
+        getCommand("상점")?.setExecutor(MainShopCommand())
         server.pluginManager.registerEvents(PlayerJoinListener(this), this)
+
+        //리스너 등록
+        server.pluginManager.registerEvents(ShopListener(), this)
 
         // ✅ 리로드 시에도 모든 플레이어 보드 다시 세팅
         for (player in Bukkit.getOnlinePlayers()) {
