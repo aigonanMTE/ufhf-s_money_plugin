@@ -64,20 +64,28 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
         when (args[0].lowercase()) {
             "등록" -> {
                 if (args.size < 2) {
-                    player.sendMessage("${ChatColor.RED} 가격을 입력해주세요")
+                    player.sendMessage("${ChatColor.YELLOW} 가격을 입력해주세요")
                     return true
                 }
-
                 val value = args[1].toIntOrNull()
                 if (player.itemInHand.isEmpty) {
-                    player.sendMessage("${ChatColor.RED} 손에 등록할 아이템을 들고 명령어를 사용해주세요")
+                    player.sendMessage("${ChatColor.YELLOW} 손에 등록할 아이템을 들고 명령어를 사용해주세요")
                     return true
                 } else if (value == null) {
-                    player.sendMessage("정상적인 가격으로 입력해주세요")
+                    player.sendMessage("${ChatColor.YELLOW}정상적인 가격으로 입력해주세요")
+                    return true
+                }else if (value < 100) {
+                    player.sendMessage("${ChatColor.YELLOW} 최소 가격은 100원 이상이어야 합니다.")
+                    return true
+                } else if (value > Int.MAX_VALUE - 15000) {
+                    player.sendMessage("${ChatColor.YELLOW} 입력한 값이 너무 큽니다.")
                     return true
                 }
-
                 val item = player.itemInHand
+                val itemInHand = player.inventory.itemInMainHand
+                if (itemInHand.type != Material.AIR) {
+                    player.inventory.setItemInMainHand(null) // 또는 ItemStack(Material.AIR)
+                }
                 itemUploadCommand(javaPlugin, player, item, value)
             }
         }
@@ -92,7 +100,7 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
         args: Array<out String>
     ): MutableList<String>? {
         if (args.size == 1) {
-            return listOf("등록",)
+            return listOf("등록")
                 .filter { it.startsWith(args[0], ignoreCase = true) }
                 .toMutableList()
         }

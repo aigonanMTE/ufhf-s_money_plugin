@@ -5,15 +5,20 @@ import org.bukkit.entity.Item
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.util.io.BukkitObjectInputStream
 import org.bukkit.util.io.BukkitObjectOutputStream
 import java.io.ByteArrayOutputStream
 import java.util.*
 import org.testmode.asd.SQL.usershop.uploaditem
+import java.io.ByteArrayInputStream
 
 fun itemUploadCommand(javaPlugin: JavaPlugin,uploader:Player , item: ItemStack, value:Int){
     val strItem = itemStackToBase64(item)
+
     if (!uploaditem(javaPlugin,uploader , strItem , value)){
         uploader.sendMessage("${ChatColor.YELLOW}아이템 등롞 도중 오류가 발생하였습니다.")
+        val item = itemStackFromBase64(strItem)
+        uploader.inventory.addItem(item)
     }else{
         uploader.sendMessage("${ChatColor.GREEN}아이템을 등록 하였습니다.")
     }
@@ -25,5 +30,15 @@ fun itemStackToBase64(item: ItemStack): String {
             out.writeObject(item)
         }
         return Base64.getEncoder().encodeToString(byteOut.toByteArray())
+    }
+}
+
+// String(Base64) -> ItemStack
+fun itemStackFromBase64(data: String): ItemStack {
+    val bytes = Base64.getDecoder().decode(data)
+    ByteArrayInputStream(bytes).use { byteIn ->
+        BukkitObjectInputStream(byteIn).use { `in` ->
+            return `in`.readObject() as ItemStack
+        }
     }
 }
