@@ -1,4 +1,4 @@
-package org.testmode.asd.SQL
+package org.testmode.asd.SQL.money
 
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin

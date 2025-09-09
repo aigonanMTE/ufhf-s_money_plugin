@@ -8,8 +8,8 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
-import org.testmode.asd.SQL.getmoney
-import org.testmode.asd.SQL.sendMoney
+import org.testmode.asd.SQL.money.getmoney
+import org.testmode.asd.SQL.money.sendMoney
 
 class MainMoneyCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, TabCompleter {
 

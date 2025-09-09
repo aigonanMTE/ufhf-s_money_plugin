@@ -24,8 +24,14 @@ fun makePluginFolder(javaPlugin: JavaPlugin): Boolean {
             javaPlugin.logger.info("money.db 파일 생성됨")
         }
 
-        // ✅ SQLite 연결 후 테이블 생성
-        val connection = DriverManager.getConnection("jdbc:sqlite:${moneyDbFile.absolutePath}")
+        val userShopDbFile = File(dbFolder,"UserShop.db")
+        if (!userShopDbFile.exists()){
+            userShopDbFile.createNewFile()
+            javaPlugin.logger.info("UserShop.db 파일 생성됌")
+        }
+
+        // money.db sql
+        var connection = DriverManager.getConnection("jdbc:sqlite:${moneyDbFile.absolutePath}")
         connection.use { conn ->
             val stmt = conn.createStatement()
             stmt.executeUpdate(
@@ -53,7 +59,23 @@ fun makePluginFolder(javaPlugin: JavaPlugin): Boolean {
                 """.trimIndent()
             )
 
-            javaPlugin.logger.info("user_money 테이블 확인/생성 완료")
+            javaPlugin.logger.info("user_money , money_log 테이블 확인/생성 완료")
+        }
+
+        connection = DriverManager.getConnection("jdbc:sqlite:${userShopDbFile.absolutePath}")
+        connection.use { conn ->
+            val stmt = conn.createStatement()
+            stmt.executeUpdate("""
+            CREATE TABLE IF NOT EXISTS shop_item_list (
+                id       INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                item_data   TEXT    NOT NULL,
+                seller_uuid TEXT    NOT NULL,
+                seller_name TEXT    NOT NULL,
+                value       INTEGER NOT NULL,
+                upload_date TEXT    NOT NULL
+            );
+            """.trimIndent())
+            javaPlugin.logger.info("")
         }
 
     } catch (e: Exception) {

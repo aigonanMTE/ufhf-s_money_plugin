@@ -11,10 +11,9 @@ import org.bukkit.scoreboard.DisplaySlot
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Scoreboard
 import org.testmode.asd.commands.money.MainMoneyCommand
-import org.testmode.asd.SQL.addUser
-import org.testmode.asd.SQL.getmoney
+import org.testmode.asd.SQL.money.addUser
+import org.testmode.asd.SQL.money.getmoney
 import org.testmode.asd.commands.money.sys_money_commnad
-import net.kyori.adventure.text.minimessage.MiniMessage
 import org.testmode.asd.commands.shop.MainShopCommand
 import org.testmode.asd.commands.testing
 import org.testmode.asd.listeners.ShopListener
@@ -42,7 +41,7 @@ class Asd : JavaPlugin(), Listener {
         getCommand("테스트")?.setExecutor(testing(this))
         getCommand("돈")?.setExecutor(MainMoneyCommand(this))
         getCommand("sys_money")?.setExecutor(sys_money_commnad(this))
-        getCommand("상점")?.setExecutor(MainShopCommand())
+        getCommand("상점")?.setExecutor(MainShopCommand(this))
         server.pluginManager.registerEvents(PlayerJoinListener(this), this)
 
         //리스너 등록
