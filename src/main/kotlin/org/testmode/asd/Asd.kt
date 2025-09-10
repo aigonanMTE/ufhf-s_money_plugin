@@ -45,7 +45,7 @@ class Asd : JavaPlugin(), Listener {
         server.pluginManager.registerEvents(PlayerJoinListener(this), this)
 
         //리스너 등록
-        server.pluginManager.registerEvents(ShopListener(), this)
+        server.pluginManager.registerEvents(ShopListener(this), this)
 
         // ✅ 리로드 시에도 모든 플레이어 보드 다시 세팅
         for (player in Bukkit.getOnlinePlayers()) {

@@ -12,7 +12,12 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.util.io.BukkitObjectInputStream
+import org.testmode.asd.SQL.usershop.getitemlist
+import java.io.ByteArrayInputStream
+import java.util.*
 
+// TODO: gui에 상점 목록 표시
 class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, TabCompleter {
 
     override fun onCommand(
@@ -28,36 +33,7 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
         val player: Player = sender
 
         if (args.isEmpty()) {
-            val gui: Inventory = Bukkit.createInventory(null, 54, "상점")
-
-            val item = ItemStack(Material.DIAMOND)
-            val meta: ItemMeta = item.itemMeta
-            meta.setDisplayName(
-                """상점 사용법
-                |
-                |사고 싶은 아이템을 클릭해 살 수 있습니다
-                |등록은 /상점 등록 [가격] 명령어를 사용해 등록할 수 있습니다
-                |구매한 아이템은 바로 지급됩니다
-            """.trimMargin()
-            )
-            item.itemMeta = meta
-
-            val item2 = ItemStack(Material.GRAY_STAINED_GLASS_PANE)
-            val meta2: ItemMeta = item2.itemMeta
-            meta2.setDisplayName("")
-            item2.itemMeta = meta2
-
-            for (i in 0..8) {
-                gui.setItem(i + 45, item2)
-                gui.setItem(i, item2)
-            }
-            for (i in 1..4) {
-                gui.setItem(10 + 9 * i - 10, item2)
-                gui.setItem(10 + 9 * i - 2, item2)
-            }
-            gui.setItem(4, item)
-
-            player.openInventory(gui)
+            openShopGUI(player, javaPlugin, 1) // 기본 1페이지
             return true
         }
 
@@ -115,3 +91,92 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
         return mutableListOf()
     }
 }
+
+// TODO: 직렬화/역직렬화 도우미 (ItemStack <-> Base64)
+fun itemFromBase64(data: String): ItemStack {
+    val byteArray = Base64.getDecoder().decode(data)
+    ByteArrayInputStream(byteArray).use { inputStream ->
+        BukkitObjectInputStream(inputStream).use { dataInput ->
+            return dataInput.readObject() as ItemStack
+        }
+    }
+}
+
+fun openShopGUI(player: Player, javaPlugin: JavaPlugin, page: Int) {
+    val gui: Inventory = Bukkit.createInventory(null, 54, "상점 - ${page}페이지")
+
+    val border = ItemStack(Material.GRAY_STAINED_GLASS_PANE).apply {
+        itemMeta = itemMeta.apply { setDisplayName("") }
+    }
+
+    // 테두리 채우기
+    for (i in 0..8) {
+        gui.setItem(i, border)
+        gui.setItem(i + 45, border)
+    }
+    for (i in 1..4) {
+        gui.setItem(10 + 9 * i - 10, border)
+        gui.setItem(10 + 9 * i - 2, border)
+    }
+
+    // 아이템 불러오기 (페이지네이션 적용)
+    val itemList = getitemlist(javaPlugin, page, 28)
+    var slot = 10
+    for (itemMap in itemList) {
+        val itemStack = itemFromBase64(itemMap["item_data"] as String)
+
+        val meta = itemStack.itemMeta
+        meta.lore = listOf(
+            "${ChatColor.YELLOW}판매자: ${itemMap["seller_name"]}",
+            "${ChatColor.GREEN}가격: ${itemMap["value"]}원",
+            "${ChatColor.GRAY}업로드: ${itemMap["upload_date"]}"
+        )
+        itemStack.itemMeta = meta
+
+        gui.setItem(slot, itemStack)
+
+        if ((slot + 1) % 9 == 8) {
+            slot += 3
+        } else {
+            slot++
+        }
+    }
+
+    // 이전 페이지 버튼
+    if (page > 1) {
+        val prev = ItemStack(Material.ARROW).apply {
+            itemMeta = itemMeta.apply { setDisplayName("${ChatColor.YELLOW}이전 페이지") }
+        }
+        gui.setItem(48, prev)
+    }
+
+    // 📖 현재 페이지 표시
+    val pageInfo = ItemStack(Material.BOOK).apply {
+        itemMeta = itemMeta.apply {
+            setDisplayName("${ChatColor.AQUA}${page} 페이지")
+            lore = listOf("${ChatColor.GRAY}현재 보고 있는 페이지입니다")
+        }
+    }
+    gui.setItem(49, pageInfo)
+
+    // 다음 페이지 버튼
+    val next = ItemStack(Material.ARROW).apply {
+        itemMeta = itemMeta.apply { setDisplayName("${ChatColor.YELLOW}다음 페이지") }
+    }
+    gui.setItem(50, next)
+
+    // 도움말 아이템
+    val help = ItemStack(Material.DIAMOND).apply {
+        itemMeta = itemMeta.apply {
+            setDisplayName("상점 사용법")
+            lore = listOf(
+                "사고 싶은 아이템을 클릭해 구매할 수 있습니다",
+                "/상점 등록 [가격] 으로 아이템 등록 가능"
+            )
+        }
+    }
+    gui.setItem(4, help)
+
+    player.openInventory(gui)
+}
+
