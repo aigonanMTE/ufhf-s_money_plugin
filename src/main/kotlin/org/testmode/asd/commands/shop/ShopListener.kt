@@ -18,6 +18,7 @@ import org.testmode.asd.commands.shop.openShopGUI
 import org.testmode.asd.commands.shop.open_buy_check
 import java.io.ByteArrayInputStream
 import java.util.*
+import kotlin.reflect.typeOf
 
 class ShopListener(private val javaPlugin: JavaPlugin) : Listener {
     @EventHandler
@@ -68,13 +69,20 @@ class ShopListener(private val javaPlugin: JavaPlugin) : Listener {
                         val itemValue = getTag(item, javaPlugin, "Item_value")?.toIntOrNull() ?: return
                         val sellerUuid = getTag(item, javaPlugin, "seller_uuid") ?: return
                         val itemId = getTag(item, javaPlugin, "id")?.toIntOrNull() ?: return
-                        val itemData = getTag(item, javaPlugin, "item_data")
-                        if(itemData !is String) return
+                        val itemData = getTag(item, javaPlugin, "sell_Item_data")
+                        if (itemData == null) {
+                            player.sendMessage("${ChatColor.RED}아이템 데이터가 비어 있습니다 (태그 없음)")
+                            return
+                        }
+
 
                         // 상점에서 아이템 내리기
                         sellItem(javaPlugin, itemId)
                         // 송금
-                        sendMoney(javaPlugin, player.uniqueId.toString(), sellerUuid, itemValue)
+                        if (!sendMoney(javaPlugin, player.uniqueId.toString(), sellerUuid, itemValue)){
+                            player.sendMessage("${ChatColor.RED}돈 보내기중 오류 발생")
+                            return
+                        }
                         //유저에게 아이템 지급
                         val buingItem = itemStackFromBase64(itemData)
                         player.give(buingItem)
