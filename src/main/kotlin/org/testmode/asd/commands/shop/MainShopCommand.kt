@@ -3,6 +3,7 @@ package org.testmode.asd.commands.shop
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -11,13 +12,14 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.util.io.BukkitObjectInputStream
 import org.testmode.asd.SQL.usershop.getitemlist
 import java.io.ByteArrayInputStream
 import java.util.*
 
-// TODO: gui에 상점 목록 표시
+// TODO: 아이템 클릭시 구메 확인창 띄우기
 class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, TabCompleter {
 
     override fun onCommand(
@@ -92,7 +94,6 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
     }
 }
 
-// TODO: 직렬화/역직렬화 도우미 (ItemStack <-> Base64)
 fun itemFromBase64(data: String): ItemStack {
     val byteArray = Base64.getDecoder().decode(data)
     ByteArrayInputStream(byteArray).use { inputStream ->
@@ -132,7 +133,10 @@ fun openShopGUI(player: Player, javaPlugin: JavaPlugin, page: Int) {
             "${ChatColor.GRAY}업로드: ${itemMap["upload_date"]}"
         )
         itemStack.itemMeta = meta
-
+        setTag(itemStack , javaPlugin , "sell" , "true")
+        setTag(itemStack , javaPlugin , "Item_value" , itemMap["value"].toString())
+        setTag(itemStack , javaPlugin , "seller" , itemMap["seller_name"].toString())
+        setTag(itemStack , javaPlugin , "sell_Item_data" , itemMap["item_data"].toString())
         gui.setItem(slot, itemStack)
 
         if ((slot + 1) % 9 == 8) {
@@ -147,6 +151,7 @@ fun openShopGUI(player: Player, javaPlugin: JavaPlugin, page: Int) {
         val prev = ItemStack(Material.ARROW).apply {
             itemMeta = itemMeta.apply { setDisplayName("${ChatColor.YELLOW}이전 페이지") }
         }
+        setTag(prev, javaPlugin,"page_button", "prev")
         gui.setItem(48, prev)
     }
 
@@ -163,6 +168,7 @@ fun openShopGUI(player: Player, javaPlugin: JavaPlugin, page: Int) {
     val next = ItemStack(Material.ARROW).apply {
         itemMeta = itemMeta.apply { setDisplayName("${ChatColor.YELLOW}다음 페이지") }
     }
+    setTag(next, javaPlugin, "page_button" , "next")
     gui.setItem(50, next)
 
     // 도움말 아이템
@@ -180,3 +186,49 @@ fun openShopGUI(player: Player, javaPlugin: JavaPlugin, page: Int) {
     player.openInventory(gui)
 }
 
+fun open_buy_check(player: Player , javaPlugin: JavaPlugin , item: ItemStack){
+    val gui: Inventory = Bukkit.createInventory(null, 54, "구매 확인창")
+
+    val border = ItemStack(Material.GRAY_STAINED_GLASS_PANE).apply {
+        itemMeta = itemMeta.apply { setDisplayName("") }
+    }
+
+    // 테두리 채우기
+    for (i in 0..8) {
+        gui.setItem(i, border)
+        gui.setItem(i + 45, border)
+    }
+    for (i in 1..4) {
+        gui.setItem(10 + 9 * i - 10, border)
+        gui.setItem(10 + 9 * i - 2, border)
+        gui.setItem(4 + 9 * i, border)
+    }
+    gui.setItem(4 , item)
+
+    val yes = ItemStack(Material.GREEN_STAINED_GLASS_PANE).apply {
+        itemMeta = itemMeta.apply { setDisplayName("${ChatColor.GREEN}구매하기") }
+    }
+    setTag(yes , javaPlugin , "buy" , "buy")
+    val no = ItemStack(Material.RED_STAINED_GLASS_PANE).apply {
+        itemMeta = itemMeta.apply { setDisplayName("${ChatColor.RED}취소하기") }
+    }
+    setTag(no , javaPlugin, "cancel" , "cancel")
+    for (i in 0..3){
+        gui.setItem(10 + 9 * i , yes)
+        gui.setItem(11 + 9 * i , yes)
+        gui.setItem(12 + 9 * i , yes)
+        gui.setItem(14 + 9 * i , no)
+        gui.setItem(15 + 9 * i , no)
+        gui.setItem(16 + 9 * i , no)
+    }
+
+    player.openInventory(gui)
+}
+
+
+fun setTag(item: ItemStack, javaPlugin: JavaPlugin, key:String, tag: String) {
+    val meta = item.itemMeta ?: return
+    val keY = NamespacedKey(javaPlugin, key)
+    meta.persistentDataContainer.set(keY, PersistentDataType.STRING, tag)
+    item.itemMeta = meta
+}
