@@ -136,7 +136,9 @@ fun openShopGUI(player: Player, javaPlugin: JavaPlugin, page: Int) {
         setTag(itemStack , javaPlugin , "sell" , "true")
         setTag(itemStack , javaPlugin , "Item_value" , itemMap["value"].toString())
         setTag(itemStack , javaPlugin , "seller" , itemMap["seller_name"].toString())
+        setTag(itemStack,javaPlugin,"seller_uuid",itemMap["seller_uuid"].toString())
         setTag(itemStack , javaPlugin , "sell_Item_data" , itemMap["item_data"].toString())
+        setTag(itemStack , javaPlugin , "id" , itemMap["id"].toString())
         gui.setItem(slot, itemStack)
 
         if ((slot + 1) % 9 == 8) {
@@ -208,11 +210,11 @@ fun open_buy_check(player: Player , javaPlugin: JavaPlugin , item: ItemStack){
     val yes = ItemStack(Material.GREEN_STAINED_GLASS_PANE).apply {
         itemMeta = itemMeta.apply { setDisplayName("${ChatColor.GREEN}구매하기") }
     }
-    setTag(yes , javaPlugin , "buy" , "buy")
+    setTag(yes , javaPlugin , "action" , "confirm")
     val no = ItemStack(Material.RED_STAINED_GLASS_PANE).apply {
         itemMeta = itemMeta.apply { setDisplayName("${ChatColor.RED}취소하기") }
     }
-    setTag(no , javaPlugin, "cancel" , "cancel")
+    setTag(no , javaPlugin, "action" , "cancel")
     for (i in 0..3){
         gui.setItem(10 + 9 * i , yes)
         gui.setItem(11 + 9 * i , yes)

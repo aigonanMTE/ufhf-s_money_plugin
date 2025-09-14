@@ -62,7 +62,8 @@ fun getitemlist(javaPlugin: JavaPlugin, page:Int ,value: Int): List<Map<String, 
                             "seller_uuid" to rs.getString("seller_uuid"),
                             "seller_name" to rs.getString("seller_name"),
                             "value" to rs.getInt("value"),
-                            "upload_date" to rs.getString("upload_date")
+                            "upload_date" to rs.getString("upload_date"),
+                            "id" to rs.getInt("id")
                         )
                         resultList.add(row)
                     }
@@ -73,4 +74,21 @@ fun getitemlist(javaPlugin: JavaPlugin, page:Int ,value: Int): List<Map<String, 
         javaPlugin.logger.warning("[getitemlist] 아이템 리스트 가져오기 중 오류 발생 \n $e")
     }
     return resultList
+}
+
+fun sellItem(javaPlugin: JavaPlugin, id:Int){
+    try {
+        val pluginFolder = javaPlugin.dataFolder
+        val dbPath = File(pluginFolder, "db${File.separator}UserShop.db")
+        val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
+        connection.use { conn ->
+            val sql = "delete from UserShop where id =?;"
+            val pstmt = conn.prepareStatement(sql)
+            pstmt.use {
+                it.setInt(1, id)
+            }
+        }
+    }catch (e:Exception){
+        javaPlugin.logger.warning("[sellItem] 아이템 상점에서 지우기중 오류 발생 item_id : $id")
+    }
 }
