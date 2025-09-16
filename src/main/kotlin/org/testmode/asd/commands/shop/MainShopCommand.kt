@@ -19,7 +19,7 @@ import org.testmode.asd.SQL.usershop.getitemlist
 import java.io.ByteArrayInputStream
 import java.util.*
 
-// TODO: 아이템 클릭시 구메 확인창 띄우기
+// TODO:2주동안 안팔린 아이템은 유저한테 다시 돌려주셈
 class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, TabCompleter {
 
     override fun onCommand(
@@ -104,7 +104,7 @@ fun itemFromBase64(data: String): ItemStack {
 }
 
 fun openShopGUI(player: Player, javaPlugin: JavaPlugin, page: Int) {
-    val gui: Inventory = Bukkit.createInventory(null, 54, "상점 - ${page}페이지")
+    val gui: Inventory = Bukkit.createInventory(null, 54, "상점  ${page}페이지")
 
     val border = ItemStack(Material.GRAY_STAINED_GLASS_PANE).apply {
         itemMeta = itemMeta.apply { setDisplayName("") }

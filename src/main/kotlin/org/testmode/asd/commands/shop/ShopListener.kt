@@ -38,7 +38,7 @@ class ShopListener(private val javaPlugin: JavaPlugin) : Listener {
         // 상점 GUI
         if (event.view.title.startsWith("상점")) {
             val currentPage = event.view.title
-                .replace("상점 - ", "")
+                .replace("상점  ", "")
                 .replace("페이지", "")
                 .trim()
                 .toIntOrNull() ?: 1
@@ -77,7 +77,10 @@ class ShopListener(private val javaPlugin: JavaPlugin) : Listener {
 
 
                         // 상점에서 아이템 내리기
-                        sellItem(javaPlugin, itemId)
+                        if (!sellItem(javaPlugin, itemId)){
+                            player.sendMessage("${ChatColor.RED}구매 도중 오류 발생")
+                            return
+                        }
                         // 송금
                         if (!sendMoney(javaPlugin, player.uniqueId.toString(), sellerUuid, itemValue)){
                             player.sendMessage("${ChatColor.RED}돈 보내기중 오류 발생")

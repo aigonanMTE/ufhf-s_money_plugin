@@ -11,6 +11,7 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    implementation("com.google.code.gson:gson:2.11.0")
 }
 
 tasks.shadowJar {

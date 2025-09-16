@@ -1,6 +1,7 @@
 package org.testmode.asd.SQL.usershop
 
 import org.bukkit.entity.Player
+import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 import java.sql.DriverManager
@@ -42,7 +43,6 @@ fun getitemlist(javaPlugin: JavaPlugin, page:Int ,value: Int): List<Map<String, 
         val pluginFolder = javaPlugin.dataFolder
         val dbPath = File(pluginFolder, "db${File.separator}UserShop.db")
         val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
-
         connection.use { conn ->
             val sql = """
                 SELECT *
@@ -76,19 +76,49 @@ fun getitemlist(javaPlugin: JavaPlugin, page:Int ,value: Int): List<Map<String, 
     return resultList
 }
 
-fun sellItem(javaPlugin: JavaPlugin, id:Int){
+fun sellItem(javaPlugin: JavaPlugin, id:Int):Boolean{
     try {
         val pluginFolder = javaPlugin.dataFolder
         val dbPath = File(pluginFolder, "db${File.separator}UserShop.db")
         val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
         connection.use { conn ->
-            val sql = "delete from UserShop where id =?;"
+            val sql = "delete from shop_item_list where id =?;"
             val pstmt = conn.prepareStatement(sql)
             pstmt.use {
                 it.setInt(1, id)
+                it.executeUpdate()
             }
         }
     }catch (e:Exception){
-        javaPlugin.logger.warning("[sellItem] 아이템 상점에서 지우기중 오류 발생 item_id : $id")
+        javaPlugin.logger.warning("[sellItem] 아이템 상점에서 지우기중 오류 발생 item_id : $id \n$e")
+        return false
+    }
+    return true
+}
+
+fun getValueOfUserItem(javaPlugin: JavaPlugin, player: Player): Int? {
+    return try {
+        val pluginFolder = javaPlugin.dataFolder
+        val dbPath = File(pluginFolder, "db${File.separator}UserShop.db")
+        val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
+
+        connection.use { conn ->
+            val sql = "SELECT COUNT(*) AS cnt FROM shop_item_list WHERE seller_uuid = ?;"
+            conn.prepareStatement(sql).use { pstmt ->
+                pstmt.setString(1, player.uniqueId.toString())
+
+                pstmt.executeQuery().use { rs ->
+                    return if (rs.next()) {
+                        rs.getInt("cnt") // 유저가 올린 아이템 개수 반환
+                    } else {
+                        0 // 결과가 없으면 0
+                    }
+                }
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        javaPlugin.logger.warning("[getValueOfUserItem] 유저가 상점에 올린 아이템 겟수 가저오기 중 오류 발생 \n$e")
+        null// 오류 발생 시 null 반환
     }
 }

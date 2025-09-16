@@ -17,9 +17,11 @@ import org.testmode.asd.commands.money.sys_money_commnad
 import org.testmode.asd.commands.shop.MainShopCommand
 import org.testmode.asd.commands.testing
 import org.testmode.asd.listeners.ShopListener
+import org.testmode.asd.setting.makePluginFolder
 
 class Asd : JavaPlugin(), Listener {
-
+    //TODO : json 파일 내용에 맞춰서 코드 짜기
+    //TODO : 2주동안 안팔린 쓰래기 돌려주기 기능 제발 만들기
     override fun onEnable() {
         // 이벤트 리스너 등록
         server.pluginManager.registerEvents(this, this)
@@ -31,11 +33,12 @@ class Asd : JavaPlugin(), Listener {
                                        
                              오류로 인하여 사용자의 데이터를 가저올수 없습니다.
                           이 오류는 대부분 플러그인 폴더가 손상 되었을떄 발생합니다.
-                                 플러그인 폴더의 money폴더를 삭재해주세요.
+                           서버 폴더의 ${this.dataFolder.path}를 삭재해주세요.
                 ===================================================================
             """.trimMargin())
             error("폴더 생성중 오류 발생!")
         }
+
 
         // 커맨드 등록
         getCommand("테스트")?.setExecutor(testing(this))

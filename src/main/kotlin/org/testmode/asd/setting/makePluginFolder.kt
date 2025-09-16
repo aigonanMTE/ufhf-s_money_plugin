@@ -1,4 +1,4 @@
-package org.testmode.asd
+package org.testmode.asd.setting
 
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
@@ -9,6 +9,25 @@ fun makePluginFolder(javaPlugin: JavaPlugin): Boolean {
         val pluginFolder = javaPlugin.dataFolder
         if (!pluginFolder.exists()) {
             pluginFolder.mkdirs()
+        }
+
+        //json 폴더 생성
+        val jsonFolder = File(pluginFolder,"json")
+        if (!jsonFolder.exists()){
+            jsonFolder.mkdirs()
+        }
+
+        //setting.json 파일 생성
+        val settingJson = File(jsonFolder,"setting.json")
+        if(!settingJson.exists()){
+            settingJson.createNewFile()
+            javaPlugin.logger.info("setting.json 파일 생성됌")
+            javaPlugin.logger.info("setting.json 내용 추가중...")
+            if (!overwriteJson(settingJson)){
+                javaPlugin.logger.warning("setting.json 내용 추가중 오류 발생!")
+                return false
+            }
+            javaPlugin.logger.info("setting.json 파일 내용 추가 성공")
         }
 
         // db 폴더 생성
