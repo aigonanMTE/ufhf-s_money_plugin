@@ -131,12 +131,35 @@ class Asd : JavaPlugin(), Listener {
         val manager = Bukkit.getScoreboardManager() ?: return
         val board: Scoreboard = manager.newScoreboard
 
-        val objective: Objective = board.registerNewObjective("money", "dummy", "§a테스트 보드")
+        // 📌 제목 불러오기
+        val title = SettingsManager.getSettingValue("leaderboard.title")?.toString() ?: "리더보드"
+        val objective: Objective = board.registerNewObjective("money", "dummy", ChatColor.translateAlternateColorCodes('&', title))
         objective.displaySlot = DisplaySlot.SIDEBAR
 
-        // 초기 점수 세팅
-        objective.getScore("§b플레이어: ${player.name}").score = 2
-        objective.getScore("§e서버에 오신걸 환영!").score = 0
+        // 📌 content 배열 불러오기
+        val content = SettingsManager.getSettingValue("leaderboard.content")
+        if (content !is List<*>) return
+
+        val moneylien = SettingsManager.getSettingValue("leaderboard.money_line").toString().toIntOrNull()
+        if (moneylien !is Int) return
+
+        // ✅ content 배열을 순서대로 점수에 반영
+        var scoreValue = content.size
+        for ((index, lineAny) in content.withIndex()) {
+            if (lineAny !is String) continue
+
+            var line = lineAny
+
+            // 치환 처리
+            line = line.replace("{player_name}", player.name)
+
+            // 중복 방지용 공백 추가
+            line += " ".repeat(index)
+            if (scoreValue == moneylien){
+                scoreValue--
+            }
+            objective.getScore(line).score = scoreValue--
+        }
 
         // 플레이어에게 보드 적용
         player.scoreboard = board
