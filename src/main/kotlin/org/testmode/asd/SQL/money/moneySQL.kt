@@ -49,10 +49,10 @@ fun addUser(javaPlugin: JavaPlugin, userUUid: String): String {
     return "added"
 }
 
-fun getmoney(javaPlugin: JavaPlugin, userUuid: String): Int? {
+fun getmoney(javaPlugin: JavaPlugin, userUuid: String): Int {
     if (!userExists(javaPlugin,userUuid)){
         javaPlugin.logger.warning("[getmoney] 데이터 베이스에 없는 유저의 정보 검색 시도")
-        return null
+        return -1
     }
     val player = Bukkit.getOfflinePlayer(userUuid).player
     try {
@@ -69,14 +69,14 @@ fun getmoney(javaPlugin: JavaPlugin, userUuid: String): Int? {
                     return if (rs.next()) {
                         rs.getInt("money") // 컬럼 이름 사용
                     } else {
-                        null // 없으면 0 반환 (원하는 기본값)
+                        -3 // 없으면 0 반환 (원하는 기본값)
                     }
                 }
             }
         }
     } catch (e: Exception) {
         javaPlugin.logger.warning("[getmoney]플레이어 ${userUuid}(${player?.name})님의 돈 값 불러오기중 오류 발생 \n$e")
-        return null // 오류 발생
+        return -2 // 오류 발생
     }
 }
 

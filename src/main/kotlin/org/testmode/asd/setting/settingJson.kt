@@ -18,6 +18,7 @@ fun overwriteJson(jsonFile: File):Boolean {
 
         val leaderboard = JsonObject().apply {
             addProperty("title", "привет, мир!")
+            addProperty("money_line",1)
             add("content", leaderboardContent)
         }
 

@@ -17,10 +17,12 @@ import org.testmode.asd.commands.money.sys_money_commnad
 import org.testmode.asd.commands.shop.MainShopCommand
 import org.testmode.asd.commands.testing
 import org.testmode.asd.listeners.ShopListener
+import org.testmode.asd.setting.SettingsManager
 import org.testmode.asd.setting.makePluginFolder
+import java.io.File
 
 class Asd : JavaPlugin(), Listener {
-    //TODO : json 파일 내용에 맞춰서 코드 짜기
+    //TODO : json 파일 내용에 맞춰서 코드 짜기 (돈 리더보드는 완성함)
     //TODO : 2주동안 안팔린 쓰래기 돌려주기 기능 제발 만들기
     override fun onEnable() {
         // 이벤트 리스너 등록
@@ -38,6 +40,8 @@ class Asd : JavaPlugin(), Listener {
             """.trimMargin())
             error("폴더 생성중 오류 발생!")
         }
+
+        SettingsManager.loadSettings(File(this.dataFolder.path+"""\json\setting.json"""))
 
 
         // 커맨드 등록
@@ -57,20 +61,45 @@ class Asd : JavaPlugin(), Listener {
 
         // ✅ 공용 스케줄러 (모든 플레이어 돈 갱신)
         object : BukkitRunnable() {
+            // 실행 전에 JSON 값 캐싱
+            private val moneyLine: Int = SettingsManager.getSettingValue("leaderboard.money_line").toString().toIntOrNull() as? Int
+                ?: throw IllegalStateException("leaderboard.money_line 값은 Int 타입이어야 합니다.")
+            private val moneyLineContentTemplate: String = SettingsManager.getSettingValue("leaderboard.money_line_content") as? String
+                ?: throw IllegalStateException("leaderboard.money_line_content 값은 String 타입이어야 합니다.")
+
             override fun run() {
                 for (player in Bukkit.getOnlinePlayers()) {
                     val board = player.scoreboard
-                    val objective = board.getObjective("test") ?: continue
+                    val objective = board.getObjective("money") ?: continue
 
                     val moneyValue = getmoney(this@Asd, player.uniqueId.toString())
 
-                    // 기존 돈 점수 제거
-                    board.entries.filter { it.startsWith("${ChatColor.GREEN}돈 :") }
-                        .forEach { board.resetScores(it) }
+                    // 기존 라인 엔트리 제거
+                    board.getEntriesAtLine(moneyLine).forEach { board.resetScores(it) }
 
-                    // 새 돈 점수 반영
-                    objective.getScore("${ChatColor.GREEN}돈 : $moneyValue").score = 1
+                    // 치환자 처리 후 새 값 반영
+                    val replacedContent = replacePlaceholders(moneyLineContentTemplate, player, moneyValue)
+                    objective.getScore(replacedContent).score = moneyLine
                 }
+            }
+
+            // 치환자 함수
+            private fun replacePlaceholders(template: String, player: Player, money: Int): String {
+                return template
+                    .replace("{money}", money.toString())
+                    .replace("{player_name}", player.name)
+            }
+
+            // 특정 라인에 해당하는 엔트리만 가져오기
+            private fun Scoreboard.getEntriesAtLine(line: Int): List<String> {
+                val entries = mutableListOf<String>()
+                val obj = this.getObjective("money") ?: return entries
+                for (entry in this.entries) {
+                    if (obj.getScore(entry).score == line) {
+                        entries.add(entry)
+                    }
+                }
+                return entries
             }
         }.runTaskTimer(this, 0L, 100L)
 
@@ -102,7 +131,7 @@ class Asd : JavaPlugin(), Listener {
         val manager = Bukkit.getScoreboardManager() ?: return
         val board: Scoreboard = manager.newScoreboard
 
-        val objective: Objective = board.registerNewObjective("test", "dummy", "§a테스트 보드")
+        val objective: Objective = board.registerNewObjective("money", "dummy", "§a테스트 보드")
         objective.displaySlot = DisplaySlot.SIDEBAR
 
         // 초기 점수 세팅
