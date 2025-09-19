@@ -22,8 +22,8 @@ import org.testmode.asd.setting.makePluginFolder
 import java.io.File
 
 class Asd : JavaPlugin(), Listener {
-    //TODO : json 파일 내용에 맞춰서 코드 짜기 (돈 리더보드는 완성함)
-    //TODO : 2주동안 안팔린 쓰래기 돌려주기 기능 제발 만들기
+    //TODO : json 파일 내용에 맞춰서 코드 짜기 (돈 , 리더보드는 완성함) 일단 이거 먼저 하고 2주 쓰래기 만드셈
+    //TODO : 2주동안 안팔린 쓰래기 돌려주기 기능 제발 만들기 <- 존나 귀찮음
     override fun onEnable() {
         // 이벤트 리스너 등록
         server.pluginManager.registerEvents(this, this)
@@ -36,6 +36,9 @@ class Asd : JavaPlugin(), Listener {
                              오류로 인하여 사용자의 데이터를 가저올수 없습니다.
                           이 오류는 대부분 플러그인 폴더가 손상 되었을떄 발생합니다.
                            서버 폴더의 ${this.dataFolder.path}를 삭재해주세요.
+                               단, ${this.dataFolder.path}를 삭제할경우 
+                                  저장된 유저의 데이터가 소실 됩니다.
+                      ${this.dataFolder.path}\db폴더를 백업후 삭제를 권장 합니다.
                 ===================================================================
             """.trimMargin())
             error("폴더 생성중 오류 발생!")
@@ -48,11 +51,15 @@ class Asd : JavaPlugin(), Listener {
         getCommand("테스트")?.setExecutor(testing(this))
         getCommand("돈")?.setExecutor(MainMoneyCommand(this))
         getCommand("sys_money")?.setExecutor(sys_money_commnad(this))
-        getCommand("상점")?.setExecutor(MainShopCommand(this))
         server.pluginManager.registerEvents(PlayerJoinListener(this), this)
 
-        //리스너 등록
-        server.pluginManager.registerEvents(ShopListener(this), this)
+        //상점 사용?
+        val useUsershop = SettingsManager.getSettingValue("use_userShop").toString()
+        if (useUsershop == "true"){
+            logger.info("상점 기능을 활성화 하는중..")
+            getCommand("상점")?.setExecutor(MainShopCommand(this))
+            server.pluginManager.registerEvents(ShopListener(this), this)
+        }
 
         // ✅ 리로드 시에도 모든 플레이어 보드 다시 세팅
         for (player in Bukkit.getOnlinePlayers()) {
@@ -60,54 +67,60 @@ class Asd : JavaPlugin(), Listener {
         }
 
         // ✅ 공용 스케줄러 (모든 플레이어 돈 갱신)
-        object : BukkitRunnable() {
-            // 실행 전에 JSON 값 캐싱
-            private val moneyLine: Int = SettingsManager.getSettingValue("leaderboard.money_line").toString().toIntOrNull() as? Int
-                ?: throw IllegalStateException("leaderboard.money_line 값은 Int 타입이어야 합니다.")
-            private val moneyLineContentTemplate: String = SettingsManager.getSettingValue("leaderboard.money_line_content") as? String
-                ?: throw IllegalStateException("leaderboard.money_line_content 값은 String 타입이어야 합니다.")
+        val use_leaderboard = SettingsManager.getSettingValue("use_leaderboard").toString()
+        if (use_leaderboard == "true") {
+            logger.info("리더보드 기능을 활성화 하는중..")
+            object : BukkitRunnable() {
+                // 실행 전에 JSON 값 캐싱
+                private val moneyLine: Int =
+                    SettingsManager.getSettingValue("leaderboard.money_line").toString().toIntOrNull() as? Int
+                        ?: throw IllegalStateException("leaderboard.money_line 값은 Int 타입이어야 합니다.")
+                private val moneyLineContentTemplate: String =
+                    SettingsManager.getSettingValue("leaderboard.money_line_content") as? String
+                        ?: throw IllegalStateException("leaderboard.money_line_content 값은 String 타입이어야 합니다.")
 
-            override fun run() {
-                for (player in Bukkit.getOnlinePlayers()) {
-                    val board = player.scoreboard
-                    val objective = board.getObjective("money") ?: continue
+                override fun run() {
+                    for (player in Bukkit.getOnlinePlayers()) {
+                        val board = player.scoreboard
+                        val objective = board.getObjective("money") ?: continue
 
-                    val moneyValue = getmoney(this@Asd, player.uniqueId.toString())
+                        val moneyValue = getmoney(this@Asd, player.uniqueId.toString())
 
-                    // 기존 라인 엔트리 제거
-                    board.getEntriesAtLine(moneyLine).forEach { board.resetScores(it) }
+                        // 기존 라인 엔트리 제거
+                        board.getEntriesAtLine(moneyLine).forEach { board.resetScores(it) }
 
-                    // 치환자 처리 후 새 값 반영
-                    val replacedContent = replacePlaceholders(moneyLineContentTemplate, player, moneyValue)
-                    objective.getScore(replacedContent).score = moneyLine
-                }
-            }
-
-            // 치환자 함수
-            private fun replacePlaceholders(template: String, player: Player, money: Int): String {
-                return template
-                    .replace("{money}", money.toString())
-                    .replace("{player_name}", player.name)
-            }
-
-            // 특정 라인에 해당하는 엔트리만 가져오기
-            private fun Scoreboard.getEntriesAtLine(line: Int): List<String> {
-                val entries = mutableListOf<String>()
-                val obj = this.getObjective("money") ?: return entries
-                for (entry in this.entries) {
-                    if (obj.getScore(entry).score == line) {
-                        entries.add(entry)
+                        // 치환자 처리 후 새 값 반영
+                        val replacedContent = replacePlaceholders(moneyLineContentTemplate, player, moneyValue)
+                        objective.getScore(replacedContent).score = moneyLine
                     }
                 }
-                return entries
-            }
-        }.runTaskTimer(this, 0L, 100L)
 
-        logger.info("Wtf 플러그인 활성화됨!")
+                // 치환자 함수
+                private fun replacePlaceholders(template: String, player: Player, money: Int): String {
+                    return template
+                        .replace("{money}", money.toString())
+                        .replace("{player_name}", player.name)
+                }
+
+                // 특정 라인에 해당하는 엔트리만 가져오기
+                private fun Scoreboard.getEntriesAtLine(line: Int): List<String> {
+                    val entries = mutableListOf<String>()
+                    val obj = this.getObjective("money") ?: return entries
+                    for (entry in this.entries) {
+                        if (obj.getScore(entry).score == line) {
+                            entries.add(entry)
+                        }
+                    }
+                    return entries
+                }
+            }.runTaskTimer(this, 0L, 100L)
+        }
+
+        logger.info("UFHF's money plugin is enable")
     }
 
     override fun onDisable() {
-        logger.info("Wtf 플러그인 비활성화됨!")
+        logger.info("UFHF's money plugin is deactivate")
     }
 
     class PlayerJoinListener(private val plugin: Asd) : org.bukkit.event.Listener {
@@ -122,7 +135,10 @@ class Asd : JavaPlugin(), Listener {
             }
 
             // ✅ 플레이어 접속 시 보드 세팅
-            plugin.setupScoreboard(player)
+            val use_leaderboard = SettingsManager.getSettingValue("use_leaderboard").toString()
+            if (use_leaderboard == "true") {
+                plugin.setupScoreboard(player)
+            }
         }
     }
 

@@ -94,12 +94,13 @@ fun makePluginFolder(javaPlugin: JavaPlugin): Boolean {
                 upload_date TEXT    NOT NULL
             );
             """.trimIndent())
-            javaPlugin.logger.info("")
+            javaPlugin.logger.info("유저상점 테이블 확인/생성 완료")
         }
 
     } catch (e: Exception) {
         javaPlugin.logger.warning("폴더/DB 설정 중 오류 발생\n$e")
         return false
     }
+    javaPlugin.logger.info("파일 생성 및 확인이 완료 되었습니다.")
     return true
 }
