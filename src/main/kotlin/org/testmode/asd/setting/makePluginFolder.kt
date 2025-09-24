@@ -80,18 +80,19 @@ fun makePluginFolder(javaPlugin: JavaPlugin): Boolean {
 
             javaPlugin.logger.info("user_money , money_log 테이블 확인/생성 완료")
         }
-
+        //UserShop.db SQL
         connection = DriverManager.getConnection("jdbc:sqlite:${userShopDbFile.absolutePath}")
         connection.use { conn ->
             val stmt = conn.createStatement()
             stmt.executeUpdate("""
             CREATE TABLE IF NOT EXISTS shop_item_list (
-                id       INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                item_data   TEXT    NOT NULL,
-                seller_uuid TEXT    NOT NULL,
-                seller_name TEXT    NOT NULL,
-                value       INTEGER NOT NULL,
-                upload_date TEXT    NOT NULL
+                id            INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                item_data     TEXT    NOT NULL,
+                seller_uuid   TEXT    NOT NULL,
+                seller_name   TEXT    NOT NULL,
+                value         INTEGER NOT NULL,
+                upload_date   TEXT    NOT NULL,
+                expiration_at INTEGER    NOT NULL
             );
             """.trimIndent())
             javaPlugin.logger.info("유저상점 테이블 확인/생성 완료")

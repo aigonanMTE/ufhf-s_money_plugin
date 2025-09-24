@@ -14,6 +14,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.11.0")
 }
 
+
 tasks.shadowJar {
     archiveBaseName.set("testplugin")
     destinationDirectory.set(file("C:\\Users\\a0109\\Documents\\ServerEngine\\servers\\server_441974653\\plugins"))

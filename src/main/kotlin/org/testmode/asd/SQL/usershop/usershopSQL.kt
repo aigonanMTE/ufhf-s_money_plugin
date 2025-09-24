@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter
 val now: LocalDateTime = LocalDateTime.now()
 val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 val formatted: String = now.format(formatter)
+val expireAt = System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 14)
 
 fun uploaditem(javaPlugin: JavaPlugin,seller:Player,item:String,value:Int):Boolean{
     try {
@@ -18,7 +19,7 @@ fun uploaditem(javaPlugin: JavaPlugin,seller:Player,item:String,value:Int):Boole
         val dbPath = File(pluginFolder, "db${File.separator}UserShop.db")
         val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
         connection.use { conn ->
-            val sql = "insert into shop_item_list (item_data , seller_uuid , seller_name , value , upload_date) values (? ,? ,? ,? ,?)"
+            val sql = "insert into shop_item_list (item_data , seller_uuid , seller_name , value , upload_date, expiration_at) values (? ,? ,? ,? ,? ,?)"
             val pstmt = conn.prepareStatement(sql)
             pstmt.use {
                 it.setString(1, item)
@@ -26,6 +27,7 @@ fun uploaditem(javaPlugin: JavaPlugin,seller:Player,item:String,value:Int):Boole
                 it.setString(3, seller.name)
                 it.setInt(4,value)
                 it.setString(5, formatted)
+                it.setLong(6,expireAt)
                 it.executeUpdate()
             }
         }
@@ -121,4 +123,26 @@ fun getValueOfUserItem(javaPlugin: JavaPlugin, player: Player): Int? {
         javaPlugin.logger.warning("[getValueOfUserItem] 유저가 상점에 올린 아이템 겟수 가저오기 중 오류 발생 \n$e")
         null// 오류 발생 시 null 반환
     }
+}
+
+fun delite_after_expiration_at_days_item(javaPlugin: JavaPlugin):Boolean{
+    try {
+        val pluginFolder = javaPlugin.dataFolder
+        val dbPath = File(pluginFolder, "db${File.separator}UserShop.db")
+        val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
+        connection.use {
+            conn ->
+            val sql = "delete from shop_item_list where expiration_at < ?"
+            val pstmt = conn.prepareStatement(sql)
+            pstmt.use {
+                it.setLong(1, System.currentTimeMillis())
+                it.executeUpdate()
+            }
+        }
+    }catch (e:Exception){
+        e.printStackTrace()
+        javaPlugin.logger.warning("[delite_after_expiration_at_days_item] 유저상점 안팔린 아이템 삭제 처리 도중 오류 발생 \n$e")
+        return false
+    }
+    return true
 }
