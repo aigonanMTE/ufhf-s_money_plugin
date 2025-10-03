@@ -3,6 +3,7 @@ package org.testmode.asd.SQL.usershop
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
+import org.testmode.asd.setting.SettingsManager
 import java.io.File
 import java.sql.DriverManager
 import java.time.LocalDateTime
@@ -11,7 +12,8 @@ import java.time.format.DateTimeFormatter
 val now: LocalDateTime = LocalDateTime.now()
 val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 val formatted: String = now.format(formatter)
-val expireAt = System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 14)
+private val cycle = SettingsManager.getSettingValue("userShop.Item_return_cycle").toString().toIntOrNull() ?: throw IllegalStateException("Item_return_cycle값은 숫자 여야 합니다.")
+val expireAt = System.currentTimeMillis() + (1000L * 60 * 60 * 24 * cycle)
 
 fun uploaditem(javaPlugin: JavaPlugin,seller:Player,item:String,value:Int):Boolean{
     try {

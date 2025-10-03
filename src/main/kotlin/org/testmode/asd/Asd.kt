@@ -13,6 +13,7 @@ import org.bukkit.scoreboard.Scoreboard
 import org.testmode.asd.commands.money.MainMoneyCommand
 import org.testmode.asd.SQL.money.addUser
 import org.testmode.asd.SQL.money.getmoney
+import org.testmode.asd.SQL.usershop.delite_after_expiration_at_days_item
 import org.testmode.asd.commands.money.sys_money_commnad
 import org.testmode.asd.commands.shop.MainShopCommand
 import org.testmode.asd.commands.testing
@@ -64,6 +65,21 @@ class Asd : JavaPlugin(), Listener {
         // ✅ 리로드 시에도 모든 플레이어 보드 다시 세팅
         for (player in Bukkit.getOnlinePlayers()) {
             setupScoreboard(player)
+        }
+
+        // 상점 안팔린 아이템 삭제 (2시간 마다)
+        val use_Item_return_cycle = SettingsManager.getSettingValue("userShop.use_Item_return_cycle")
+        if (use_Item_return_cycle == "true"){
+            logger.info("유저상점 아이템 삭제 사이클 기능 활성화 하는중...")
+            object : BukkitRunnable() {
+                override fun run() {
+                    if (delite_after_expiration_at_days_item(this@Asd)) {
+                        logger.info("유저 상점의 팔리지 않은 아이템을 삭제 하였습니다.")
+                    } else {
+                        logger.warning("유저 상점의 팔리지 않은 아이템 삭제 도중 오류 발생")
+                    }
+                }
+            }.runTaskTimer(this, 0L, 20L * 60 * 60 * 2) // 2시간마다 실행
         }
 
         // ✅ 공용 스케줄러 (모든 플레이어 돈 갱신)

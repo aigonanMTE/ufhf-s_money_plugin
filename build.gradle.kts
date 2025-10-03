@@ -17,7 +17,7 @@ dependencies {
 
 tasks.shadowJar {
     archiveBaseName.set("testplugin")
-    destinationDirectory.set(file("C:\\Users\\a0109\\Documents\\ServerEngine\\servers\\server_441974653\\plugins"))
+    destinationDirectory.set(file("C:\\Users\\USER\\Documents\\ServerEngine\\servers\\server_441974653\\plugins"))
     manifest {
         attributes["Main-Class"] = "org.zepelown.kotlintestplugin.KotlinTestPlugin"
     }
