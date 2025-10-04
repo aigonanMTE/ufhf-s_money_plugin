@@ -15,6 +15,7 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.util.io.BukkitObjectInputStream
 import org.testmode.asd.SQL.usershop.find_and_delete_expired_items
+import org.testmode.asd.SQL.usershop.getExpiredItem
 import org.testmode.asd.SQL.usershop.getitemlist
 import org.testmode.asd.setting.SettingsManager
 import java.io.ByteArrayInputStream
@@ -84,14 +85,22 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
                         val items = find_and_delete_expired_items(javaPlugin, player.uniqueId.toString())
                         if (items.isEmpty()) {
                             player.sendMessage("${ChatColor.YELLOW}반환할 만료 아이템이 없습니다.")
+                            return true
                         } else {
                             items.forEach { item ->
                                 player.inventory.addItem(item)
                             }
                             player.sendMessage("${ChatColor.GREEN}아이템 반환을 완료 하였습니다.")
+                            return true
                         }
-                    } else {
-                        player.sendMessage("${ChatColor.RED}/상점 만료된_아이템_반환 yes 로 입력해주세요.")
+                    } else if (args[1] == "목록") {
+                        openRetunGui(player,javaPlugin)
+                    }else {
+                        player.sendMessage(
+                            "${ChatColor.RED}⚠ 인벤토리가 가득 차있으면 아이템이 증발하거나 바닥에 떨어질 수 있습니다.\n" +
+                                    "꼭 인벤토리를 비우고 명령어를 입력해주세요.\n" +
+                                    "확인했다면 /상점 만료된_아이템_반환 yes 를 입력해주세요"
+                        )
                     }
 
                 } else {
@@ -121,7 +130,7 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
                 .filter { it.startsWith(args[1]) }
                 .toMutableList()
         }else if (args.size == 2 && args[0].equals("만료된_아이템_반환", ignoreCase = true)){
-            return listOf("1" , "yes").filter { it.startsWith(args[1]) }.toMutableList()
+            return listOf("1" , "yes","목록").filter { it.startsWith(args[1]) }.toMutableList()
         }
 
         return mutableListOf()
@@ -267,4 +276,78 @@ fun setTag(item: ItemStack, javaPlugin: JavaPlugin, key:String, tag: String) {
     val keY = NamespacedKey(javaPlugin, key)
     meta.persistentDataContainer.set(keY, PersistentDataType.STRING, tag)
     item.itemMeta = meta
+}
+
+fun openRetunGui(player: Player, javaPlugin: JavaPlugin) {
+    val gui: Inventory = Bukkit.createInventory(null, 54, "만료된 아이템 목록")
+
+    val border = ItemStack(Material.GRAY_STAINED_GLASS_PANE).apply {
+        itemMeta = itemMeta.apply { setDisplayName("") }
+    }
+
+    // 상단 및 하단 테두리
+    for (i in 0..8) {
+        gui.setItem(i, border)
+        gui.setItem(45 + i, border)
+    }
+
+    // 좌우 테두리
+    for (row in 1..4) {
+        gui.setItem(row * 9, border)
+        gui.setItem(row * 9 + 8, border)
+    }
+
+    // 도움말 다이아몬드
+    val help = ItemStack(Material.DIAMOND).apply {
+        itemMeta = itemMeta.apply {
+            setDisplayName("§b유저상점 만료 아이템 보관함")
+            lore = listOf(
+                "§7아이템 보관함에 §c3일 동안§7 보관이 가능합니다.",
+                "§73일이 지나면 아이템이 §4삭제됩니다§7."
+            )
+        }
+    }
+    gui.setItem(4, help)
+
+    // ✅ 만료된 아이템 불러오기
+    val list = getExpiredItem(javaPlugin, player)
+
+    // ✅ GUI의 빈칸 인덱스 (테두리 제외)
+    val itemSlots = listOf(
+        10, 11, 12, 13, 14, 15, 16,
+        19, 20, 21, 22, 23, 24, 25,
+        28, 29, 30, 31, 32, 33, 34,
+        37, 38, 39, 40, 41, 42, 43
+    )
+
+    // ✅ 아이템을 GUI에 채우기
+    for ((index, data) in list.withIndex()) {
+        if (index >= itemSlots.size) break
+        val slot = itemSlots[index]
+
+        val item = data["item"] as? ItemStack ?: continue
+        val expiration = data["expiration_at"] as? Long ?: 0L
+
+// ✅ 현재 시간(초 단위)과 비교
+        val currentTime = System.currentTimeMillis() / 1000
+        val remaining = expiration - currentTime
+
+// 음수면 이미 만료
+        val hours = if (remaining > 0) remaining / 3600 else 0
+        val minutes = if (remaining > 0) (remaining % 3600) / 60 else 0
+
+        val meta = item.itemMeta
+        meta.lore = (meta.lore ?: listOf()) + listOf(
+            "",
+            if (remaining > 0)
+                "§7만료까지: §e${hours}시간 ${minutes}분 남음"
+            else
+                "§c이미 만료된 아이템입니다."
+        )
+        item.itemMeta = meta
+
+        gui.setItem(slot, item)
+    }
+
+    player.openInventory(gui)
 }

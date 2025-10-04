@@ -14,7 +14,8 @@ val now: LocalDateTime = LocalDateTime.now()
 val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 val formatted: String = now.format(formatter)
 private val cycle = SettingsManager.getSettingValue("userShop.Item_return_cycle").toString().toIntOrNull() ?: throw IllegalStateException("Item_return_cycle값은 숫자 여야 합니다.")
-val expireAt = System.currentTimeMillis() + (1000L * 60 * 60 * 24 * cycle)
+// 업로드 시 만료일 계산
+val expireAt = (System.currentTimeMillis() / 1000) + (60L * 60 * 24 * cycle)
 
 fun uploaditem(javaPlugin: JavaPlugin,seller:Player,item:String,value:Int):Boolean{
     try {
@@ -141,7 +142,7 @@ fun delete_after_expiration_at_days_item(javaPlugin: JavaPlugin): Boolean {
             // ✅ 먼저 만료 아이템 SELECT
             val selectSql = "SELECT id, item_data, seller_uuid, expiration_at FROM shop_item_list WHERE expiration_at < ?"
             conn.prepareStatement(selectSql).use { pstmt ->
-                pstmt.setLong(1, System.currentTimeMillis())
+                pstmt.setLong(1, System.currentTimeMillis() / 1000) // ✅ 초 단위로 맞추기
                 pstmt.executeQuery().use { rs ->
                     while (rs.next()) {
                         expiredItems.add(
@@ -170,7 +171,7 @@ fun delete_after_expiration_at_days_item(javaPlugin: JavaPlugin): Boolean {
                     expiredItems.forEach{
                         pstmt.setString(1,it["seller_uuid"].toString())//user_uuid
                         pstmt.setString(2,it["item_data"].toString())//item_data
-                        pstmt.setLong(3,it["expiration_at"].toString().toLong())//만료일
+                        pstmt.setLong(3,it["expiration_at"].toString().toLong()+(60 * 60 * 24 * 3))//만료일
                         pstmt.executeUpdate()
                     }
                 }
@@ -178,7 +179,7 @@ fun delete_after_expiration_at_days_item(javaPlugin: JavaPlugin): Boolean {
                 // ✅ 옮기기 후 DELETE 실행
                 val deleteSql = "DELETE FROM shop_item_list WHERE expiration_at < ?"
                 conn.prepareStatement(deleteSql).use { pstmt ->
-                    pstmt.setLong(1, System.currentTimeMillis())
+                    pstmt.setLong(1, System.currentTimeMillis() / 1000) // ✅ 초 단위로 통일
                     val deletedCount = pstmt.executeUpdate()
                     javaPlugin.logger.info("만료된 아이템 ${deletedCount}개 not_selling_items 테이블로 이동 완료")
                 }
@@ -230,4 +231,39 @@ fun find_and_delete_expired_items(javaPlugin: JavaPlugin, userUuid: String): Lis
     }
 
     return items
+}
+
+fun getExpiredItem(javaPlugin: JavaPlugin,player: Player): List<Map<String, Any>>{//최근 28개 불러오기
+    val resultList = mutableListOf<Map<String, Any>>()
+    try{
+        val pluginFolder = javaPlugin.dataFolder
+        val dbPath = File(pluginFolder, "db${File.separator}UserShop.db")
+        val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
+        connection.use { conn ->
+            val sql = """
+                SELECT *
+                FROM not_selling_items
+                where user_uuid=?
+                ORDER BY expiration_at DESC
+                LIMIT 28;
+            """.trimIndent()
+
+            conn.prepareStatement(sql).use { pstmt ->
+                pstmt.setString(1, player.uniqueId.toString())
+                pstmt.executeQuery().use { rs ->
+                    while (rs.next()) {
+                        val item = itemStackFromBase64(rs.getString("item_data"))
+                        val row = mapOf(
+                            "expiration_at" to rs.getLong("expiration_at"),
+                            "item" to item
+                        )
+                        resultList.add(row)
+                    }
+                }
+            }
+        }
+    }catch (e:Exception){
+        javaPlugin.logger.warning("[getExpiredItem] 만료된 아이템 검색중 오류 발생 $e")
+    }
+    return resultList
 }
