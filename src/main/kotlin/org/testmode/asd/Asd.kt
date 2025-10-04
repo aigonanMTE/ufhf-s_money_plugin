@@ -13,7 +13,7 @@ import org.bukkit.scoreboard.Scoreboard
 import org.testmode.asd.commands.money.MainMoneyCommand
 import org.testmode.asd.SQL.money.addUser
 import org.testmode.asd.SQL.money.getmoney
-import org.testmode.asd.SQL.usershop.delite_after_expiration_at_days_item
+import org.testmode.asd.SQL.usershop.delete_after_expiration_at_days_item
 import org.testmode.asd.commands.money.sys_money_commnad
 import org.testmode.asd.commands.shop.MainShopCommand
 import org.testmode.asd.commands.testing
@@ -23,8 +23,7 @@ import org.testmode.asd.setting.makePluginFolder
 import java.io.File
 
 class Asd : JavaPlugin(), Listener {
-    //TODO : json 파일 내용에 맞춰서 코드 짜기 (돈 , 리더보드는 완성함) 일단 이거 먼저 하고 2주 쓰래기 만드셈
-    //TODO : 2주동안 안팔린 쓰래기 돌려주기 기능 제발 만들기 <- 존나 귀찮음
+    //TODO : 아이템 삭제는 만들었는데 그 아이템 다시 유저한테 주는 기능 만들어야함
     override fun onEnable() {
         // 이벤트 리스너 등록
         server.pluginManager.registerEvents(this, this)
@@ -68,12 +67,13 @@ class Asd : JavaPlugin(), Listener {
         }
 
         // 상점 안팔린 아이템 삭제 (2시간 마다)
+        delete_after_expiration_at_days_item(this)
         val use_Item_return_cycle = SettingsManager.getSettingValue("userShop.use_Item_return_cycle")
         if (use_Item_return_cycle == "true"){
             logger.info("유저상점 아이템 삭제 사이클 기능 활성화 하는중...")
             object : BukkitRunnable() {
                 override fun run() {
-                    if (delite_after_expiration_at_days_item(this@Asd)) {
+                    if (delete_after_expiration_at_days_item(this@Asd)) {
                         logger.info("유저 상점의 팔리지 않은 아이템을 삭제 하였습니다.")
                     } else {
                         logger.warning("유저 상점의 팔리지 않은 아이템 삭제 도중 오류 발생")

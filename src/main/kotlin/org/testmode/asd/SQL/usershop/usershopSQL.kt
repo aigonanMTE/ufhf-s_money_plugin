@@ -127,23 +127,65 @@ fun getValueOfUserItem(javaPlugin: JavaPlugin, player: Player): Int? {
     }
 }
 
-fun delite_after_expiration_at_days_item(javaPlugin: JavaPlugin):Boolean{
+fun delete_after_expiration_at_days_item(javaPlugin: JavaPlugin): Boolean {
     try {
         val pluginFolder = javaPlugin.dataFolder
         val dbPath = File(pluginFolder, "db${File.separator}UserShop.db")
         val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
-        connection.use {
-            conn ->
-            val sql = "delete from shop_item_list where expiration_at < ?"
-            val pstmt = conn.prepareStatement(sql)
-            pstmt.use {
-                it.setLong(1, System.currentTimeMillis())
-                it.executeUpdate()
+
+        val expiredItems = mutableListOf<Map<String, Any>>()
+        javaPlugin.logger.info("유저상점을 청소중입니다... 앞으로 2시간 후에 다시 청소합니다")
+
+        connection.use { conn ->
+            // ✅ 먼저 만료 아이템 SELECT
+            val selectSql = "SELECT id, item_data, seller_uuid, expiration_at FROM shop_item_list WHERE expiration_at < ?"
+            conn.prepareStatement(selectSql).use { pstmt ->
+                pstmt.setLong(1, System.currentTimeMillis())
+                pstmt.executeQuery().use { rs ->
+                    while (rs.next()) {
+                        expiredItems.add(
+                            mapOf(
+                                "id" to rs.getInt("id"),
+                                "item_data" to rs.getString("item_data"),
+                                "seller_uuid" to rs.getString("seller_uuid"),
+                                "expiration_at" to rs.getLong("expiration_at")
+                            )
+                        )
+                    }
+                }
+            }
+            javaPlugin.logger.info(System.currentTimeMillis().toString())
+            if (expiredItems.isEmpty()) {
+                javaPlugin.logger.info("만료된 아이템이 없습니다.")
+            } else {
+                javaPlugin.logger.info("만료된 아이템 ${expiredItems.size}개 발견")
+//                expiredItems.forEach {
+//                    javaPlugin.logger.info("ID: ${it["id"]}, 판매자: ${it["seller_uuid"]}")
+//                }
+
+                //만료된 아이템들 not_selling_items 테이블로 옮기기
+                val addsql = "insert INTO not_selling_items values (?,?,?)"
+                conn.prepareStatement(addsql).use { pstmt->
+                    expiredItems.forEach{
+                        pstmt.setString(1,it["seller_uuid"].toString())//user_uuid
+                        pstmt.setString(2,it["item_data"].toString())//item_data
+                        pstmt.setLong(3,it["expiration_at"].toString().toLong())//만료일
+                        pstmt.executeUpdate()
+                    }
+                }
+
+                // ✅ 옮기기 후 DELETE 실행
+                val deleteSql = "DELETE FROM shop_item_list WHERE expiration_at < ?"
+                conn.prepareStatement(deleteSql).use { pstmt ->
+                    pstmt.setLong(1, System.currentTimeMillis())
+                    val deletedCount = pstmt.executeUpdate()
+                    javaPlugin.logger.info("만료된 아이템 ${deletedCount}개 not_selling_items 테이블로 이동 완료")
+                }
             }
         }
-    }catch (e:Exception){
+    } catch (e: Exception) {
         e.printStackTrace()
-        javaPlugin.logger.warning("[delite_after_expiration_at_days_item] 유저상점 안팔린 아이템 삭제 처리 도중 오류 발생 \n$e")
+        javaPlugin.logger.warning("[delete_after_expiration_at_days_item] 유저상점 만료 아이템 삭제 처리 도중 오류 발생 \n$e")
         return false
     }
     return true

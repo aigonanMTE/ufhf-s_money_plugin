@@ -94,6 +94,11 @@ fun makePluginFolder(javaPlugin: JavaPlugin): Boolean {
                 upload_date   TEXT    NOT NULL,
                 expiration_at INTEGER    NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS not_selling_items (
+                user_uuid   TEXT NOT NULL,
+                item_datta TEXT NOT NULL,
+                expiration_at INTEGER NOT NULL
+            );
             """.trimIndent())
             javaPlugin.logger.info("유저상점 테이블 확인/생성 완료")
         }
