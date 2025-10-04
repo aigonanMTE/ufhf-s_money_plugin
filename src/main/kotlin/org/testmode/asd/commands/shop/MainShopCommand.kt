@@ -11,11 +11,12 @@ import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.util.io.BukkitObjectInputStream
+import org.testmode.asd.SQL.usershop.find_and_delete_expired_items
 import org.testmode.asd.SQL.usershop.getitemlist
+import org.testmode.asd.setting.SettingsManager
 import java.io.ByteArrayInputStream
 import java.util.*
 
@@ -52,7 +53,7 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
                 } else if (value == null) {
                     player.sendMessage("${ChatColor.YELLOW}정상적인 가격으로 입력해주세요")
                     return true
-                }else if (value < 100) {
+                } else if (value < 100) {
                     player.sendMessage("${ChatColor.YELLOW} 최소 가격은 100원 이상이어야 합니다.")
                     return true
                 } else if (value > Int.MAX_VALUE - 15000) {
@@ -66,6 +67,37 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
                 }
                 itemUploadCommand(javaPlugin, player, item, value)
             }
+
+            "만료된_아이템_반환" -> {
+                if (SettingsManager.getSettingValue("userShop.use_Item_return_cycle").toString() == "true") {
+
+                    if (args.size < 2) {
+                        player.sendMessage(
+                            "${ChatColor.RED}⚠ 인벤토리가 가득 차있으면 아이템이 증발하거나 바닥에 떨어질 수 있습니다.\n" +
+                                    "꼭 인벤토리를 비우고 명령어를 입력해주세요.\n" +
+                                    "확인했다면 /상점 만료된_아이템_반환 yes 를 입력해주세요"
+                        )
+                        return true
+                    }
+
+                    if (args[1].equals("yes", ignoreCase = true)) {
+                        val items = find_and_delete_expired_items(javaPlugin, player.uniqueId.toString())
+                        if (items.isEmpty()) {
+                            player.sendMessage("${ChatColor.YELLOW}반환할 만료 아이템이 없습니다.")
+                        } else {
+                            items.forEach { item ->
+                                player.inventory.addItem(item)
+                            }
+                            player.sendMessage("${ChatColor.GREEN}아이템 반환을 완료 하였습니다.")
+                        }
+                    } else {
+                        player.sendMessage("${ChatColor.RED}/상점 만료된_아이템_반환 yes 로 입력해주세요.")
+                    }
+
+                } else {
+                    player.sendMessage("${ChatColor.RED}이 서버에서는 이 기능을 사용할 수 없습니다.")
+                }
+            }
         }
         return true
     }
@@ -78,7 +110,7 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
         args: Array<out String>
     ): MutableList<String>? {
         if (args.size == 1) {
-            return listOf("등록")
+            return listOf("등록", "만료된_아이템_반환")
                 .filter { it.startsWith(args[0], ignoreCase = true) }
                 .toMutableList()
         }
@@ -88,6 +120,8 @@ class MainShopCommand(private val javaPlugin: JavaPlugin) : CommandExecutor, Tab
             return listOf("100", "1000", "5000", "10000")
                 .filter { it.startsWith(args[1]) }
                 .toMutableList()
+        }else if (args.size == 2 && args[0].equals("만료된_아이템_반환", ignoreCase = true)){
+            return listOf("1" , "yes").filter { it.startsWith(args[1]) }.toMutableList()
         }
 
         return mutableListOf()

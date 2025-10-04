@@ -1,8 +1,9 @@
 package org.testmode.asd.SQL.usershop
 
 import org.bukkit.entity.Player
-import org.bukkit.plugin.Plugin
+import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
+import org.testmode.asd.commands.shop.itemStackFromBase64
 import org.testmode.asd.setting.SettingsManager
 import java.io.File
 import java.sql.DriverManager
@@ -189,4 +190,44 @@ fun delete_after_expiration_at_days_item(javaPlugin: JavaPlugin): Boolean {
         return false
     }
     return true
+}
+
+fun find_and_delete_expired_items(javaPlugin: JavaPlugin, userUuid: String): List<ItemStack> {
+    val items = mutableListOf<ItemStack>()
+    val dleitems = mutableListOf<String>()
+
+    try {
+        val pluginFolder = javaPlugin.dataFolder
+        val dbPath = File(pluginFolder, "db${File.separator}UserShop.db")
+        val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
+
+        connection.use { conn ->
+            // 📌 1. 아이템 조회
+            val sql = "SELECT item_data FROM not_selling_items WHERE user_uuid=?"
+            conn.prepareStatement(sql).use { pstmt ->
+                pstmt.setString(1, userUuid)
+                pstmt.executeQuery().use { rs ->
+                    while (rs.next()) {
+                        val itemData = rs.getString("item_data")
+                        dleitems.add(itemData)
+                        val item = itemStackFromBase64(itemData) // 직렬화 해제 함수
+                        items.add(item)
+                    }
+                }
+            }
+
+            // 📌 2. 아이템 삭제
+            val delsql = "DELETE FROM not_selling_items WHERE item_data=?"
+            conn.prepareStatement(delsql).use { pstmt ->
+                for (itemData in dleitems) {
+                    pstmt.setString(1, itemData)
+                    pstmt.executeUpdate()
+                }
+            }
+        }
+    } catch (e: Exception) {
+        javaPlugin.logger.warning("[find_and_delete_expired_items] 유저($userUuid)의 만료된 아이템 찾기/삭제 중 오류 발생: $e")
+    }
+
+    return items
 }

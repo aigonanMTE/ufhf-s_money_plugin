@@ -96,7 +96,7 @@ fun makePluginFolder(javaPlugin: JavaPlugin): Boolean {
             );
             CREATE TABLE IF NOT EXISTS not_selling_items (
                 user_uuid   TEXT NOT NULL,
-                item_datta TEXT NOT NULL,
+                item_data TEXT NOT NULL,
                 expiration_at INTEGER NOT NULL
             );
             """.trimIndent())
