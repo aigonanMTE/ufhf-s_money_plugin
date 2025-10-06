@@ -14,8 +14,8 @@ val now: LocalDateTime = LocalDateTime.now()
 val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 val formatted: String = now.format(formatter)
 private val cycle = SettingsManager.getSettingValue("userShop.Item_return_cycle").toString().toIntOrNull() ?: throw IllegalStateException("Item_return_cycle값은 숫자 여야 합니다.")
-// 업로드 시 만료일 계산
-val expireAt = (System.currentTimeMillis() / 1000) + (60L * 60 * 24 * cycle)
+// 시간은 그냥 초로 통합해서 관리 하기
+val expireAt = (System.currentTimeMillis() / 1000) + (60L * 60 * 24 * cycle)// 1970년 1월 1일 부터 지금까지 초 * cycle
 
 fun uploaditem(javaPlugin: JavaPlugin,seller:Player,item:String,value:Int):Boolean{
     try {
@@ -31,7 +31,7 @@ fun uploaditem(javaPlugin: JavaPlugin,seller:Player,item:String,value:Int):Boole
                 it.setString(3, seller.name)
                 it.setInt(4,value)
                 it.setString(5, formatted)
-                it.setLong(6,expireAt)
+                it.setLong(6,expireAt)//초로 저장
                 it.executeUpdate()
             }
         }
@@ -156,7 +156,7 @@ fun delete_after_expiration_at_days_item(javaPlugin: JavaPlugin): Boolean {
                     }
                 }
             }
-            javaPlugin.logger.info(System.currentTimeMillis().toString())
+            javaPlugin.logger.info("${System.currentTimeMillis() / 1000}")
             if (expiredItems.isEmpty()) {
                 javaPlugin.logger.info("만료된 아이템이 없습니다.")
             } else {

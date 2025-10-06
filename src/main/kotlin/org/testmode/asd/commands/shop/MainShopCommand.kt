@@ -1,5 +1,6 @@
 package org.testmode.asd.commands.shop
 
+import org.apache.commons.lang3.ObjectUtils.Null
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.Material
@@ -19,6 +20,8 @@ import org.testmode.asd.SQL.usershop.getExpiredItem
 import org.testmode.asd.SQL.usershop.getitemlist
 import org.testmode.asd.setting.SettingsManager
 import java.io.ByteArrayInputStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 // TODO:2주동안 안팔린 아이템은 유저한테 다시 돌려주셈
@@ -169,11 +172,29 @@ fun openShopGUI(player: Player, javaPlugin: JavaPlugin, page: Int) {
     for (itemMap in itemList) {
         val itemStack = itemFromBase64(itemMap["item_data"] as String)
 
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        val uploadDateStr = itemMap["upload_date"] as String
+        val uploadDate = LocalDateTime.parse(uploadDateStr, formatter)
+
+// 14일 후 계산
+        val expireCycle = SettingsManager.getSettingValue("userShop.Item_return_cycle").toString().toLongOrNull()
+        if (expireCycle !is Long){
+            javaPlugin.logger.warning("[openShopGUI] 유저상점 아이템 만료일 불러오기중 오류 발생 \nuserShop.Item_return_cycle값이 숫자가 아니거나 잘못되었습니다")
+            player.closeInventory()
+            player.sendMessage("${ChatColor.RED}아이템 불러오기중 오류가 발생하였습니다.")
+            return
+        }
+        val expireDate = uploadDate.plusDays(expireCycle)
+
+// 문자열로 다시 변환
+        val expireDateStr = expireDate.format(formatter)
+
         val meta = itemStack.itemMeta
         meta.lore = listOf(
             "${ChatColor.YELLOW}판매자: ${itemMap["seller_name"]}",
             "${ChatColor.GREEN}가격: ${itemMap["value"]}원",
-            "${ChatColor.GRAY}업로드: ${itemMap["upload_date"]}"
+            "${ChatColor.GRAY}업로드: ${itemMap["upload_date"]}",
+            "${ChatColor.RED}만료일 : $expireDateStr"
         )
         itemStack.itemMeta = meta
         setTag(itemStack , javaPlugin , "sell" , "true")
@@ -326,15 +347,13 @@ fun openRetunGui(player: Player, javaPlugin: JavaPlugin) {
         val slot = itemSlots[index]
 
         val item = data["item"] as? ItemStack ?: continue
-        val expiration = data["expiration_at"] as? Long ?: 0L
+        val expiration = data["expiration_at"] as? Long ?: 0L //초
+        javaPlugin.logger.info("만료일$expiration")
 
-// ✅ 현재 시간(초 단위)과 비교
-        val currentTime = System.currentTimeMillis() / 1000
-        val remaining = expiration - currentTime
+        val minutes = expiration * 60
+        val hours = minutes * 60
 
-// 음수면 이미 만료
-        val hours = if (remaining > 0) remaining / 3600 else 0
-        val minutes = if (remaining > 0) (remaining % 3600) / 60 else 0
+        val remaining = expiration - System.currentTimeMillis() / 1000
 
         val meta = item.itemMeta
         meta.lore = (meta.lore ?: listOf()) + listOf(
