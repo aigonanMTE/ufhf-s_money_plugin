@@ -5,41 +5,39 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import java.io.File
 
-fun overwriteJson(jsonFile: File):Boolean {
-    try {
+fun overwriteJson(jsonFile: File): Boolean {
+    return try {
         val gson = GsonBuilder().setPrettyPrinting().create()
 
-        // 새 JSON 구조 정의
+        // leaderboard.content 배열 정의
         val leaderboardContent = JsonArray().apply {
-            add("player_name : {player_name}")
-            add("money : {money}")
-            add("서버에 오신걸 환영합니다!")
+            add("{coler.green}player_name : {player_name}")
+            add("{coler.blue}서버에 오신걸 환영합니다!")
         }
 
+        // leaderboard 객체 정의
         val leaderboard = JsonObject().apply {
-            addProperty("title", "привет, мир!")
-            addProperty("money_line",1)
+            addProperty("title", "{coler.green}привет, мир!")
+            addProperty("money_line", 1)
+            addProperty("money_line_content", "{coler.green}money : {money}원")
             add("content", leaderboardContent)
         }
 
-        val itemReturnCycleUnit = JsonObject().apply {
-            addProperty("day", true)
-            addProperty("hour", false)
-            addProperty("minute", false)
-        }
-
+        // userShop 객체 정의
         val userShop = JsonObject().apply {
+            addProperty("main_display_name", "상점 {page}")
             addProperty("description_title", "상점 사용법")
             addProperty(
                 "description_message",
                 "사고싶은 아이템을 클릭하여 구매할수 있습니다.\n/상점 등록 <가격> 명령어로 아이템을 상점에 등록 할수 있습니다."
             )
+            addProperty("use_Item_return_cycle", true)
             addProperty("Item_return_cycle", 14)
-            add("Item_return_cycle_unit", itemReturnCycleUnit)
             addProperty("use_max_item_count", true)
             addProperty("max_item_count", 20)
         }
 
+        // 루트 JSON 정의
         val root = JsonObject().apply {
             addProperty("fun_cool_sexy_message", false)
             addProperty("use_leaderboard", true)
@@ -48,10 +46,11 @@ fun overwriteJson(jsonFile: File):Boolean {
             add("userShop", userShop)
         }
 
-        // 🔥 기존 내용은 지우고 새로운 JSON으로 덮어쓰기
+        // 파일 덮어쓰기
         jsonFile.writeText(gson.toJson(root))
-    }catch (e:Exception){
-        return false
+        true
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false
     }
-    return true
 }
