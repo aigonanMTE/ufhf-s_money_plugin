@@ -350,10 +350,10 @@ fun openRetunGui(player: Player, javaPlugin: JavaPlugin) {
         val expiration = data["expiration_at"] as? Long ?: 0L //초
         javaPlugin.logger.info("만료일$expiration")
 
-        val minutes = expiration * 60
-        val hours = minutes * 60
-
         val remaining = expiration - System.currentTimeMillis() / 1000
+        val hours = remaining / 3600
+        val minutes = (remaining % 3600) / 60
+
 
         val meta = item.itemMeta
         meta.lore = (meta.lore ?: listOf()) + listOf(

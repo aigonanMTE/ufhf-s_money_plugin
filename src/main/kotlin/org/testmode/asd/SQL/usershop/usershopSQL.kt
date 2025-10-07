@@ -17,30 +17,38 @@ private val cycle = SettingsManager.getSettingValue("userShop.Item_return_cycle"
 // 시간은 그냥 초로 통합해서 관리 하기
 val expireAt = (System.currentTimeMillis() / 1000) + (60L * 60 * 24 * cycle)// 1970년 1월 1일 부터 지금까지 초 * cycle
 
-fun uploaditem(javaPlugin: JavaPlugin,seller:Player,item:String,value:Int):Boolean{
+fun uploaditem(javaPlugin: JavaPlugin, seller: Player, item: String, value: Int): Boolean {
     try {
         val pluginFolder = javaPlugin.dataFolder
         val dbPath = File(pluginFolder, "db${File.separator}UserShop.db")
         val connection = DriverManager.getConnection("jdbc:sqlite:${dbPath.absolutePath}")
+
+        val now = System.currentTimeMillis() / 1000 // 초 단위
+        val expireAt = now + (60L * 60 * 24 * cycle) // N일 후
+
         connection.use { conn ->
-            val sql = "insert into shop_item_list (item_data , seller_uuid , seller_name , value , upload_date, expiration_at) values (? ,? ,? ,? ,? ,?)"
-            val pstmt = conn.prepareStatement(sql)
-            pstmt.use {
+            val sql = """
+                INSERT INTO shop_item_list (item_data, seller_uuid, seller_name, value, upload_date, expiration_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """.trimIndent()
+
+            conn.prepareStatement(sql).use {
                 it.setString(1, item)
-                it.setString(2,seller.uniqueId.toString())
+                it.setString(2, seller.uniqueId.toString())
                 it.setString(3, seller.name)
-                it.setInt(4,value)
-                it.setString(5, formatted)
-                it.setLong(6,expireAt)//초로 저장
+                it.setInt(4, value)
+                it.setString(5, LocalDateTime.now().format(formatter))
+                it.setLong(6, expireAt)
                 it.executeUpdate()
             }
         }
-    } catch (e:Exception){
-        javaPlugin.logger.warning("[uploaditem] 유저 상점 아이템 추가중 오류 발생 \n $e")
+    } catch (e: Exception) {
+        javaPlugin.logger.warning("[uploaditem] 유저 상점 아이템 추가 중 오류 발생 \n$e")
         return false
     }
     return true
 }
+
 
 fun getitemlist(javaPlugin: JavaPlugin, page:Int ,value: Int): List<Map<String, Any>> {
     val resultList = mutableListOf<Map<String, Any>>()
